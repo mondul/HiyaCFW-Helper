@@ -9,6 +9,7 @@ In order to make things easier for me, and because I don't have Windows, I edite
 * Uses your platform's twltool (binaries for Linux and MacOS included) to decrypt the NAND.
 * Mounts the decrypted NAND (OSFMount required for Windows) and extracts it to a folder named "out".
 * Installs the HiyaCFW and the patched files on the "out" folder.
+* (Optional) installs the latest release of TWiLightMenu++ on the "out" folder.
 
 All that you have to do then is copy the contents of the "out" folder onto your (preferably empty) SD card.
 

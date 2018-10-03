@@ -1,27 +1,35 @@
 #!/usr/bin/python
 
-from Tkinter import *
+from Tkinter import (Tk, Frame, LabelFrame, Entry, Button, Checkbutton, Toplevel, Scrollbar,
+    Listbox, StringVar, IntVar, LEFT, RIGHT, X, Y, DISABLED, NORMAL, SUNKEN, SINGLE, END)
 from tkMessageBox import showerror
 from tkFileDialog import askopenfilename
 from platform import system
-import os
-import ctypes
+from os import path, remove, chmod, listdir
 from sys import exit
 from threading import Thread
 from binascii import hexlify
-import hashlib
+from hashlib import sha1
 from urllib import urlopen, urlretrieve
 from json import loads as jsonify
 from subprocess import Popen, PIPE
 from struct import unpack_from
 from re import search
-from shutil import rmtree
+from shutil import move, rmtree
 from distutils.dir_util import copy_tree
+from stat import S_IREAD, S_IRGRP, S_IROTH
 
 
 ####################################################################################################
 
 class Application(Frame):
+    REGION_CODES = {
+        'USA': '45',
+        'JAP': '4a',
+        'EUR': '50',
+        'AUS': '55'
+    }
+
     def __init__(self, master=None):
         Frame.__init__(self, master)
 
@@ -35,7 +43,7 @@ class Application(Frame):
 
         Button(f1, text='...', command=self.choose_nand).pack(side='left')
 
-        f1.pack(padx=10, pady=10)
+        f1.pack(padx=10, pady=(10, 0))
 
         # Second row
         f2 = LabelFrame(self, text='Decrypted DSi system menu launcher app', padx=10, pady=10)
@@ -47,10 +55,23 @@ class Application(Frame):
 
         f2.pack(padx=10, pady=10)
 
-        self.start_button = Button(self, text='Start', width=16, command=self.hiya, state=DISABLED)
-        self.start_button.pack()
+        self.twilight = IntVar()
+        self.twilight.set(1)
+        chk = Checkbutton(self, text='Install latest TWiLight Menu++ on custom firmware',
+            justify=LEFT, variable=self.twilight)
+        chk.pack(padx=10, fill=X)
 
-        Button(self, text='Quit', command=root.destroy, width=16).pack(pady=10)
+        f3 = Frame(self)
+
+        self.start_button = Button(f3, text='Start', width=16, command=self.hiya, state=DISABLED)
+        self.start_button.pack(side='left', padx=(0, 5))
+
+        Button(f3, text='Quit', command=root.destroy, width=16).pack(side='left', padx=(5, 0))
+
+        f3.pack(pady=(10, 20))
+
+        self.folders = []
+        self.files = []
 
 
     ################################################################################################
@@ -85,10 +106,11 @@ class Application(Frame):
         scrollbar = Scrollbar(frame)
         scrollbar.pack(side=RIGHT, fill=Y)
 
-        self.log = Listbox(frame, selectmode=SINGLE, bd=0, width=50, height=20, yscrollcommand=scrollbar.set)
-        self.log.pack()
+        self.log_list = Listbox(frame, selectmode=SINGLE, bd=0, width=50, height=20,
+            yscrollcommand=scrollbar.set)
+        self.log_list.pack()
 
-        scrollbar.config(command=self.log.yview)
+        scrollbar.config(command=self.log_list.yview)
 
         frame.pack()
 
@@ -106,7 +128,7 @@ class Application(Frame):
 
     ################################################################################################
     def check_nand(self):
-        self.log.insert(END, 'Checking NAND file...')
+        self.log('Checking NAND file...')
 
         # Read the NAND file
         try:
@@ -119,98 +141,102 @@ class Application(Frame):
                 if bstr == b'DSi eMMC CID/CPU':
                     # Read the CID
                     bstr = f.read(0x10)
-                    self.log.insert(END, 'eMMC CID  : ' + hexlify(bstr).upper())
+                    self.log('eMMC CID  : ' + hexlify(bstr).upper())
 
                     # Read the console ID
                     bstr = f.read(8)
                     self.console_id = hexlify(bytearray(reversed(bstr))).upper()
-                    self.log.insert(END, 'Console ID: ' + self.console_id)
+                    self.log('Console ID: ' + self.console_id)
 
                     Thread(target=self.check_launcher).start()
 
                 else:
-                    self.log.insert(END, 'ERROR: No$GBA footer not found')
+                    self.log('ERROR: No$GBA footer not found')
 
         except IOError:
-            self.log.insert(END, 'ERROR: Could not open the file ' + os.path.basename(self.nand_file.get()))
+            self.log('ERROR: Could not open the file ' + path.basename(self.nand_file.get()))
 
 
     ################################################################################################
     def check_launcher(self):
-        self.log.insert(END, '')
-        self.log.insert(END, 'Checking launcher file...')
+        self.log('')
+        self.log('Checking launcher file...')
 
         self.launcher_region = ''
 
-        expected_sha1s = {
+        EXPECTED_SHA1S = {
             'USA': '1339bd7457484839f1d71f27de2f8da8098834b4',
             'JAP': '69c422a1ab1f26344a3d2b294ec714db362f57f0',
             'EUR': 'c5a3507181489f5190976a905b2953799e421363',
             'AUS': '8f79c6c1442d3e33d211454ec92bbe42c94a599d'
         }
 
-        sha1 = hashlib.sha1()
+        sha1_hash = sha1()
 
         # Read the launcher file
         try:
             with open(self.launcher_file.get(), 'rb') as f:
-                sha1.update(f.read())
+                sha1_hash.update(f.read())
 
-            sha1_hex = sha1.hexdigest()
+            sha1_hex = sha1_hash.hexdigest()
 
-            for region, expected_sha1 in expected_sha1s.items():
+            for region, expected_sha1 in EXPECTED_SHA1S.items():
                 if sha1_hex == expected_sha1:
                     self.launcher_region = region
                     break
 
             if (self.launcher_region == ''):
-                self.log.insert(END, 'ERROR: Launcher is not v512 of AUS, USA, EUR or JAP')
+                self.log('ERROR: Launcher is not v512 of AUS, USA, EUR or JAP')
 
             else:
-                self.log.insert(END, 'Launcher region: ' + self.launcher_region)
+                self.log('Launcher region: ' + self.launcher_region)
                 Thread(target=self.get_latest_hiyacfw).start()
 
         except IOError:
-            self.log.insert(END, 'ERROR: Could not open the file 00000002.app')
+            self.log('ERROR: Could not open the file 00000002.app')
 
 
     ################################################################################################
     def get_latest_hiyacfw(self):
-        self.log.insert(END, '')
-        self.log.insert(END, 'Downloading and extracting latest HiyaCFW release...')
+        self.log('')
+        self.log('Downloading and extracting latest HiyaCFW release...')
 
         try:
             txt = urlopen('https://api.github.com/repos/Robz8/hiyaCFW/releases/latest')
             latest = jsonify(txt.read())
             txt.close()
 
-            urlretrieve(latest['assets'][0]['browser_download_url'], 'HiyaCFW.7z')
+            filename = urlretrieve(latest['assets'][0]['browser_download_url'])[0]
 
-            exe = os.path.join(sysname, '7zDec')
+            exe = path.join(sysname, '7zDec')
 
-            proc = Popen([ exe, 'x', 'HiyaCFW.7z' ])
+            proc = Popen([ exe, 'x', filename ])
 
             ret_val = proc.wait()
 
             if ret_val == 0:
+                self.folders.append('for PC')
+                self.folders.append('for regularly used SD card')
+                self.folders.append('for SDNAND SD card')
+                self.files.append(filename)
                 Thread(target=self.decrypt_launcher).start()
 
             else:
-                self.log.insert(END, 'Extractor failed')
+                self.log('Extractor failed')
 
         except IOError:
-            self.log.insert(END, 'ERROR: Could not get HiyaCFW')
+            self.log('ERROR: Could not get HiyaCFW')
 
         except OSError:
-            self.log.insert(END, 'ERROR: Could not execute ' + exe)
+            self.log('ERROR: Could not execute ' + exe)
 
 
     ################################################################################################
     def decrypt_launcher(self):
-        self.log.insert(END, '')
-        self.log.insert(END, 'Decrypting launcher...')
+        self.log('')
+        self.log('Decrypting launcher...')
 
-        exe = os.path.join('for PC', 'twltool') if sysname == 'Windows' else os.path.join(sysname,
+        exe = path.join('for PC', 'twltool') if sysname == 'Windows' else path.join(sysname,
             'twltool')
 
         try:
@@ -223,18 +249,18 @@ class Application(Frame):
                 Thread(target=self.patch_launcher).start()
 
             else:
-                self.log.insert(END, 'Decryptor failed')
+                self.log('Decryptor failed')
 
         except OSError:
-            self.log.insert(END, 'ERROR: Could not execute ' + exe)
+            self.log('ERROR: Could not execute ' + exe)
 
 
     ################################################################################################
     def patch_launcher(self):
-        self.log.insert(END, '')
-        self.log.insert(END, 'Patching launcher...')
+        self.log('')
+        self.log('Patching launcher...')
 
-        patch = os.path.join('for PC', 'v1.4 Launcher (00000002.app)' +
+        patch = path.join('for PC', 'v1.4 Launcher (00000002.app)' +
             (' (JAP-KOR)' if self.launcher_region == 'JAP' else '') + ' patch.ips')
 
         try:
@@ -243,18 +269,18 @@ class Application(Frame):
             Thread(target=self.extract_bios).start()
 
         except IOError:
-            self.log.insert(END, 'ERROR: Could not patch BIOS')
+            self.log('ERROR: Could not patch BIOS')
 
         except Exception:
-            self.log.insert(END, 'ERROR: Invalid patch header')
+            self.log('ERROR: Invalid patch header')
 
 
     ################################################################################################
     def extract_bios(self):
-        self.log.insert(END, '')
-        self.log.insert(END, 'Extracting ARM7/ARM9 BIOS from NAND...')
+        self.log('')
+        self.log('Extracting ARM7/ARM9 BIOS from NAND...')
 
-        exe = os.path.join('for PC', 'twltool') if sysname == 'Windows' else os.path.join(sysname,
+        exe = path.join('for PC', 'twltool') if sysname == 'Windows' else path.join(sysname,
             'twltool')
 
         try:
@@ -266,44 +292,46 @@ class Application(Frame):
                 Thread(target=self.patch_bios).start()
 
             else:
-                self.log.insert(END, 'Extractor failed')
+                self.log('Extractor failed')
 
         except OSError:
-            self.log.insert(END, 'ERROR: Could not execute ' + exe)
+            self.log('ERROR: Could not execute ' + exe)
 
 
     ################################################################################################
     def patch_bios(self):
-        self.log.insert(END, '')
-        self.log.insert(END, 'Patching ARM7/ARM9 BIOS...')
+        self.log('')
+        self.log('Patching ARM7/ARM9 BIOS...')
 
         try:
-            self.patcher(os.path.join('for PC', 'bootloader files', 'bootloader arm7 patch.ips'),
+            self.patcher(path.join('for PC', 'bootloader files', 'bootloader arm7 patch.ips'),
                 'arm7.bin')
 
-            self.patcher(os.path.join('for PC', 'bootloader files', 'bootloader arm9 patch.ips'),
+            self.patcher(path.join('for PC', 'bootloader files', 'bootloader arm9 patch.ips'),
                 'arm9.bin')
 
+            self.files.append('arm7.bin')
+            self.files.append('arm9.bin')
             Thread(target=self.arm9_prepend).start()
 
         except IOError:
-            self.log.insert(END, 'ERROR: Could not patch BIOS')
+            self.log('ERROR: Could not patch BIOS')
 
         except Exception:
-            self.log.insert(END, 'ERROR: Invalid patch header')
+            self.log('ERROR: Invalid patch header')
 
 
     ################################################################################################
     def arm9_prepend(self):
-        self.log.insert(END, '')
-        self.log.insert(END, 'Prepending data to ARM9 BIOS...')
+        self.log('')
+        self.log('Prepending data to ARM9 BIOS...')
 
         try:
             with open('arm9.bin', 'rb') as f:
                 data = f.read()
 
             with open('arm9.bin', 'wb') as f:
-                with open(os.path.join('for PC', 'bootloader files',
+                with open(path.join('for PC', 'bootloader files',
                     'bootloader arm9 append to start.bin'), 'rb') as pre:
                     f.write(pre.read())
 
@@ -312,21 +340,21 @@ class Application(Frame):
             Thread(target=self.make_bootloader).start()
 
         except IOError:
-            self.log.insert(END, 'ERROR: Could not prepend data to ARM9 BIOS')
+            self.log('ERROR: Could not prepend data to ARM9 BIOS')
 
 
     ################################################################################################
     def make_bootloader(self):
-        self.log.insert(END, '')
-        self.log.insert(END, 'Generating new bootloader...')
+        self.log('')
+        self.log('Generating new bootloader...')
 
-        exe = (os.path.join('for PC', 'bootloader files', 'ndstool') if sysname == 'Windows' else
-            os.path.join(sysname, 'ndsblc'))
+        exe = (path.join('for PC', 'bootloader files', 'ndstool') if sysname == 'Windows' else
+            path.join(sysname, 'ndsblc'))
 
         try:
             proc = Popen([ exe, '-c', 'bootloader.nds', '-9', 'arm9.bin', '-7', 'arm7.bin', '-t',
-                os.path.join('for PC', 'bootloader files', 'banner.bin'), '-h',
-                os.path.join('for PC', 'bootloader files', 'header.bin') ])
+                path.join('for PC', 'bootloader files', 'banner.bin'), '-h',
+                path.join('for PC', 'bootloader files', 'header.bin') ])
 
             ret_val = proc.wait()
 
@@ -334,18 +362,18 @@ class Application(Frame):
                 Thread(target=self.decrypt_nand).start()
 
             else:
-                self.log.insert(END, 'Generator failed')
+                self.log('Generator failed')
 
         except OSError:
-            self.log.insert(END, 'ERROR: Could not execute ' + exe)
+            self.log('ERROR: Could not execute ' + exe)
 
 
     ################################################################################################
     def decrypt_nand(self):
-        self.log.insert(END, '')
-        self.log.insert(END, 'Decrypting NAND...')
+        self.log('')
+        self.log('Decrypting NAND...')
 
-        exe = os.path.join('for PC', 'twltool') if sysname == 'Windows' else os.path.join(sysname,
+        exe = path.join('for PC', 'twltool') if sysname == 'Windows' else path.join(sysname,
             'twltool')
 
         try:
@@ -355,19 +383,20 @@ class Application(Frame):
             ret_val = proc.wait()
 
             if ret_val == 0:
+                self.files.append(self.console_id + '.img')
                 Thread(target=self.mount_nand).start()
 
             else:
-                self.log.insert(END, 'Decryptor failed')
+                self.log('Decryptor failed')
 
         except OSError:
-            self.log.insert(END, 'ERROR: Could not execute ' + exe)
+            self.log('ERROR: Could not execute ' + exe)
 
 
     ################################################################################################
     def mount_nand(self):
-        self.log.insert(END, '')
-        self.log.insert(END, 'Mounting decrypted NAND...')
+        self.log('')
+        self.log('Mounting decrypted NAND...')
 
         try:
             if sysname == 'Windows':
@@ -379,13 +408,13 @@ class Application(Frame):
                 outs, errs = proc.communicate()
 
                 if proc.returncode == 0:
-                    self.mounted = re.search(r'[a-zA-Z]:\s', outs).group(0).strip()
-                    self.log.insert(END, 'Mounted on drive ' + self.mounted)
+                    self.mounted = search(r'[a-zA-Z]:\s', outs).group(0).strip()
+                    self.log('Mounted on drive ' + self.mounted)
 
                     Thread(target=self.extract_nand).start()
 
                 else:
-                    self.log.insert(END, 'Mounter failed')
+                    self.log('Mounter failed')
 
             elif sysname == 'Darwin':
                 exe = 'hdiutil'
@@ -397,8 +426,8 @@ class Application(Frame):
                 outs, errs = proc.communicate()
 
                 if proc.returncode == 0:
-                    self.raw_disk = re.search(r'^\/dev\/disk\d+', outs).group(0)
-                    self.log.insert(END, 'Mounted raw disk on ' + self.raw_disk)
+                    self.raw_disk = search(r'^\/dev\/disk\d+', outs).group(0)
+                    self.log('Mounted raw disk on ' + self.raw_disk)
 
                     proc = Popen([ exe, 'mount', '-readonly', self.raw_disk + 's1' ], stdin=PIPE,
                         stdout=PIPE, stderr=PIPE)
@@ -406,16 +435,16 @@ class Application(Frame):
                     outs, errs = proc.communicate()
 
                     if proc.returncode == 0:
-                        self.mounted = re.search(r'\/Volumes\/.+', outs).group(0)
-                        self.log.insert(END, 'Mounted volume on ' + self.mounted)
+                        self.mounted = search(r'\/Volumes\/.+', outs).group(0)
+                        self.log('Mounted volume on ' + self.mounted)
 
                         Thread(target=self.extract_nand).start()
 
                     else:
-                        self.log.insert(END, 'Mounter failed')
+                        self.log('Mounter failed')
 
                 else:
-                    self.log.insert(END, 'Mounter failed')
+                    self.log('Mounter failed')
 
             else:  # Linux
                 exe = 'losetup'
@@ -425,8 +454,8 @@ class Application(Frame):
                 outs, errs = proc.communicate()
 
                 if proc.returncode == 0:
-                    self.loop_dev = re.search(r'\/dev\/loop\d+', outs).group(0)
-                    self.log.insert(END, 'Mounted loop device on ' + self.loop_dev)
+                    self.loop_dev = search(r'\/dev\/loop\d+', outs).group(0)
+                    self.log('Mounted loop device on ' + self.loop_dev)
 
                     exe = 'mount'
 
@@ -437,24 +466,24 @@ class Application(Frame):
                     ret_val = proc.wait()
 
                     if ret_val == 0:
-                        self.log.insert(END, 'Mounted partition on ' + self.mounted)
+                        self.log('Mounted partition on ' + self.mounted)
 
                         Thread(target=self.extract_nand).start()
 
                     else:
-                        self.log.insert(END, 'Mounter failed')
+                        self.log('Mounter failed')
 
                 else:
-                    self.log.insert(END, 'Mounter failed')
+                    self.log('Mounter failed')
 
         except OSError:
-            self.log.insert(END, 'ERROR: Could not execute ' + exe)
+            self.log('ERROR: Could not execute ' + exe)
 
 
     ################################################################################################
     def extract_nand(self):
-        self.log.insert(END, '')
-        self.log.insert(END, 'Extracting files from NAND...')
+        self.log('')
+        self.log('Extracting files from NAND...')
 
         rmtree('out', ignore_errors=True)
         copy_tree(self.mounted, 'out')
@@ -464,8 +493,8 @@ class Application(Frame):
 
     ################################################################################################
     def unmount_nand(self):
-        self.log.insert(END, '')
-        self.log.insert(END, 'Unmounting NAND...')
+        self.log('')
+        self.log('Unmounting NAND...')
 
         try:
             if sysname == 'Windows':
@@ -491,7 +520,7 @@ class Application(Frame):
                     proc = Popen([ exe, '-d', self.loop_dev ])
 
                 else:
-                    self.log.insert(END, 'Unmounter failed')
+                    self.log('Unmounter failed')
                     return
 
             ret_val = proc.wait()
@@ -500,54 +529,127 @@ class Application(Frame):
                 Thread(target=self.install_hiyacfw).start()
 
             else:
-                self.log.insert(END, 'Unmounter failed')
+                self.log('Unmounter failed')
 
         except OSError:
-            self.log.insert(END, 'ERROR: Could not execute ' + exe)
+            self.log('ERROR: Could not execute ' + exe)
 
 
     ################################################################################################
     def install_hiyacfw(self):
-        self.log.insert(END, '')
-        self.log.insert(END, 'Copying HiyaCFW files...')
-
-        region_codes = {
-            'USA': '45',
-            'JAP': '4a',
-            'EUR': '50',
-            'AUS': '55'
-        }
+        self.log('')
+        self.log('Copying HiyaCFW files...')
 
         copy_tree('for SDNAND SD card', 'out', update=1)
-        os.rename('bootloader.nds', os.path.join('out', 'hiya', 'bootloader.nds'))
-        os.rename('00000002.app', os.path.join('out', 'title', '00030017', '484e41' +
-        	region_codes[self.launcher_region], 'content', '00000002.app'))
+        move('bootloader.nds', path.join('out', 'hiya', 'bootloader.nds'))
+        move('00000002.app', path.join('out', 'title', '00030017', '484e41' +
+        	self.REGION_CODES[self.launcher_region], 'content', '00000002.app'))
+
+        Thread(target=self.get_latest_twilight if self.twilight.get() == 1 else self.clean).start()
+
+
+    ################################################################################################
+    def get_latest_twilight(self):
+        self.log('')
+        self.log('Downloading and extracting latest')
+        self.log('TWiLight Menu++ release...')
+
+        try:
+            txt = urlopen('https://api.github.com/repos/Robz8/TWiLightMenu/releases/latest')
+            latest = jsonify(txt.read())
+            txt.close()
+
+            filename = urlretrieve(latest['assets'][0]['browser_download_url'])[0]
+
+            exe = path.join(sysname, '7zDec')
+
+            proc = Popen([ exe, 'x', filename ])
+
+            ret_val = proc.wait()
+
+            if ret_val == 0:
+                self.folders.append('Autoboot for HiyaCFW')
+                self.folders.append('CFW - SDNAND root')
+                self.folders.append('cia')
+                self.folders.append('DSiWare (AUS)')
+                self.folders.append('DSiWare (EUR)')
+                self.folders.append('DSiWare (JAP)')
+                self.folders.append('DSiWare (USA)')
+                self.folders.append('Flashcard autoboot')
+                self.folders.append('Unlaunch (no CFW) - SD root')
+                self.files.append(filename)
+                self.files.append('BOOT_fc.NDS')
+                Thread(target=self.install_twilight).start()
+
+            else:
+                self.log('Extractor failed')
+
+        except IOError:
+            self.log('ERROR: Could not get TWiLight Menu++')
+
+        except OSError:
+            self.log('ERROR: Could not execute ' + exe)
+
+
+    ################################################################################################
+    def install_twilight(self):
+        self.log('')
+        self.log('Copying TWiLight Menu++ files...')
+
+        copy_tree('CFW - SDNAND root', 'out', update=1)
+        move('_nds', path.join('out', '_nds'))
+        move('roms', path.join('out', 'roms'))
+        move('BOOT.NDS', path.join('out', 'BOOT.NDS'))
+        copy_tree('DSiWare (' + self.launcher_region + ')', path.join('out', 'roms', 'dsiware'),
+            update=1)
+        move(path.join('Autoboot for HiyaCFW', 'autoboot.bin'),
+            path.join('out', 'hiya', 'autoboot.bin'))
+
+        # Set files as read-only
+        chmod(path.join('out', 'shared1', 'TWLCFG0.dat'), S_IREAD | S_IRGRP | S_IROTH)
+        chmod(path.join('out', 'shared1', 'TWLCFG1.dat'), S_IREAD | S_IRGRP | S_IROTH)
+
+        # Generate launchargs
+        for app in listdir(path.join('out', 'title', '00030004')):
+            try:
+                for title in listdir(path.join('out', 'title', '00030004', app, 'content')):
+                    if title.endswith('.app'):
+                        with open(path.join('out', 'roms', 'dsiware', app + '.launcharg'),
+                            'w') as launcharg:
+                            launcharg.write('sd:/title/00030004/' + app + '/content/' + title)
+
+            except:
+                pass
 
         Thread(target=self.clean).start()
 
 
     ################################################################################################
     def clean(self):
-        self.log.insert(END, '')
-        self.log.insert(END, 'Cleaning...')
+        self.log('')
+        self.log('Cleaning...')
 
-        rmtree('for PC', ignore_errors=True)
-        rmtree('for regularly used SD card', ignore_errors=True)
-        rmtree('for SDNAND SD card', ignore_errors=True)
-        os.remove(self.console_id + '.img')
-        os.remove('arm7.bin')
-        os.remove('arm9.bin')
-        os.remove('HiyaCFW.7z')
+        while len(self.folders) > 0:
+            rmtree(self.folders.pop(), ignore_errors=True)
 
-        self.log.insert(END, '')
-        self.log.insert(END, 'Done!')
-        self.log.insert(END, 'Move the contents of the out')
-        self.log.insert(END, "folder to your DSi's SD card")
+        while len(self.files) > 0:
+            remove(self.files.pop())
+
+        self.log('')
+        self.log('Done!')
+        self.log('Move the contents of the out')
+        self.log("folder to your DSi's SD card")
+
+
+    ################################################################################################
+    def log(self, txt):
+        self.log_list.insert(END, txt)
+        self.log_list.yview(END)
 
 
     ################################################################################################
     def patcher(self, patchpath, filepath):
-        patch_size = os.path.getsize(patchpath)
+        patch_size = path.getsize(patchpath)
 
         patchfile = open(patchpath, 'rb')
 
@@ -604,25 +706,35 @@ sysname = system()
 root = Tk()
 
 if sysname == 'Windows':
-    osfmount = os.path.join(os.environ['PROGRAMFILES'], 'OSFMount', 'OSFMount.com')
+    from _winreg import OpenKey, QueryValueEx, HKEY_LOCAL_MACHINE
+    from ctypes import windll
 
-    if not os.path.exists(osfmount):
+    try:
+        with OpenKey(HKEY_LOCAL_MACHINE,
+            'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\OSFMount_is1') as hkey:
+
+            osfmount = path.join(QueryValueEx(hkey, 'InstallLocation')[0], 'OSFMount.com')
+
+    except WindowsError:
         root.withdraw()
         showerror('Error', 'This script needs OSFMount to run. Please install it.')
         root.destroy()
         exit(1)
 
-    elif ctypes.windll.shell32.IsUserAnAdmin() == 0:
+    if windll.shell32.IsUserAnAdmin() == 0:
         root.withdraw()
         showerror('Error', 'This script needs to be run with administrator privileges.')
         root.destroy()
         exit(1)
 
-elif sysname == 'Linux' and os.getuid() != 0:
-    root.withdraw()
-    showerror('Error', 'This script needs to be run with sudo.')
-    root.destroy()
-    exit(1)
+elif sysname == 'Linux':
+    from os import getuid
+
+    if getuid() != 0:
+        root.withdraw()
+        showerror('Error', 'This script needs to be run with sudo.')
+        root.destroy()
+        exit(1)
 
 root.title('HiyaCFW Helper')
 # Disable maximizing
