@@ -6,11 +6,12 @@ from tkMessageBox import showerror
 from tkFileDialog import askopenfilename
 from platform import system
 from os import path, remove, chmod, listdir
-from sys import exit
+from sys import exit, path as libdir
 from threading import Thread
 from binascii import hexlify
 from hashlib import sha1
-from urllib import urlopen, urlretrieve
+from urllib2 import urlopen, URLError, Request
+from urllib import urlretrieve
 from json import loads as jsonify
 from subprocess import Popen, PIPE
 from struct import unpack_from
@@ -19,17 +20,14 @@ from shutil import move, rmtree
 from distutils.dir_util import copy_tree
 from stat import S_IREAD, S_IRGRP, S_IROTH
 
+libdir.append('pyaes')
+
+from pyaes import AESModeOfOperationCBC, Decrypter
+
 
 ####################################################################################################
 
 class Application(Frame):
-    REGION_CODES = {
-        'USA': '45',
-        'JAP': '4a',
-        'EUR': '50',
-        'AUS': '55'
-    }
-
     def __init__(self, master=None):
         Frame.__init__(self, master)
 
@@ -43,32 +41,24 @@ class Application(Frame):
 
         Button(f1, text='...', command=self.choose_nand).pack(side='left')
 
-        f1.pack(padx=10, pady=(10, 0))
+        f1.pack(padx=10, pady=10)
 
-        # Second row
-        f2 = LabelFrame(self, text='Decrypted DSi system menu launcher app', padx=10, pady=10)
-
-        self.launcher_file = StringVar()
-        Entry(f2, textvariable=self.launcher_file, state='readonly', width=40).pack(side='left')
-
-        Button(f2, text='...', command=self.choose_launcher).pack(side='left')
-
-        f2.pack(padx=10, pady=10)
-
+        # Check box
         self.twilight = IntVar()
         self.twilight.set(1)
         chk = Checkbutton(self, text='Install latest TWiLight Menu++ on custom firmware',
             justify=LEFT, variable=self.twilight)
         chk.pack(padx=10, fill=X)
 
-        f3 = Frame(self)
+        # Second row
+        f2 = Frame(self)
 
-        self.start_button = Button(f3, text='Start', width=16, command=self.hiya, state=DISABLED)
+        self.start_button = Button(f2, text='Start', width=16, command=self.hiya, state=DISABLED)
         self.start_button.pack(side='left', padx=(0, 5))
 
-        Button(f3, text='Quit', command=root.destroy, width=16).pack(side='left', padx=(5, 0))
+        Button(f2, text='Quit', command=root.destroy, width=16).pack(side='left', padx=(5, 0))
 
-        f3.pack(pady=(10, 20))
+        f2.pack(pady=(10, 20))
 
         self.folders = []
         self.files = []
@@ -79,17 +69,7 @@ class Application(Frame):
         name = askopenfilename(filetypes=( ( 'nand.bin', '*.bin' ), ( 'DSi-1.mmc', '*.mmc' ) ))
         self.nand_file.set(name)
 
-        self.start_button['state'] = (NORMAL if self.nand_file.get() != ''
-            and self.launcher_file.get() != '' else DISABLED)
-
-
-    ################################################################################################
-    def choose_launcher(self):
-        name = askopenfilename(filetypes=( ( '00000002.app', '*.app' ), ))
-        self.launcher_file.set(name)
-
-        self.start_button['state'] = (NORMAL if self.nand_file.get() != ''
-            and self.launcher_file.get() != '' else DISABLED)
+        self.start_button['state'] = (NORMAL if self.nand_file.get() != '' else DISABLED)
 
 
     ################################################################################################
@@ -141,14 +121,14 @@ class Application(Frame):
                 if bstr == b'DSi eMMC CID/CPU':
                     # Read the CID
                     bstr = f.read(0x10)
-                    self.log('eMMC CID  : ' + hexlify(bstr).upper())
+                    self.log('- eMMC CID: ' + hexlify(bstr).upper())
 
                     # Read the console ID
                     bstr = f.read(8)
                     self.console_id = hexlify(bytearray(reversed(bstr))).upper()
-                    self.log('Console ID: ' + self.console_id)
+                    self.log('- Console ID: ' + self.console_id)
 
-                    Thread(target=self.check_launcher).start()
+                    Thread(target=self.get_latest_hiyacfw).start()
 
                 else:
                     self.log('ERROR: No$GBA footer not found')
@@ -158,53 +138,14 @@ class Application(Frame):
 
 
     ################################################################################################
-    def check_launcher(self):
-        self.log('')
-        self.log('Checking launcher file...')
-
-        self.launcher_region = ''
-
-        EXPECTED_SHA1S = {
-            'USA': '1339bd7457484839f1d71f27de2f8da8098834b4',
-            'JAP': '69c422a1ab1f26344a3d2b294ec714db362f57f0',
-            'EUR': 'c5a3507181489f5190976a905b2953799e421363',
-            'AUS': '8f79c6c1442d3e33d211454ec92bbe42c94a599d'
-        }
-
-        sha1_hash = sha1()
-
-        # Read the launcher file
-        try:
-            with open(self.launcher_file.get(), 'rb') as f:
-                sha1_hash.update(f.read())
-
-            sha1_hex = sha1_hash.hexdigest()
-
-            for region, expected_sha1 in EXPECTED_SHA1S.items():
-                if sha1_hex == expected_sha1:
-                    self.launcher_region = region
-                    break
-
-            if (self.launcher_region == ''):
-                self.log('ERROR: Launcher is not v512 of AUS, USA, EUR or JAP')
-
-            else:
-                self.log('Launcher region: ' + self.launcher_region)
-                Thread(target=self.get_latest_hiyacfw).start()
-
-        except IOError:
-            self.log('ERROR: Could not open the file 00000002.app')
-
-
-    ################################################################################################
     def get_latest_hiyacfw(self):
         self.log('')
         self.log('Downloading and extracting latest HiyaCFW release...')
 
         try:
-            txt = urlopen('https://api.github.com/repos/Robz8/hiyaCFW/releases/latest')
-            latest = jsonify(txt.read())
-            txt.close()
+            conn = urlopen('https://api.github.com/repos/Robz8/hiyaCFW/releases/latest')
+            latest = jsonify(conn.read())
+            conn.close()
 
             filename = urlretrieve(latest['assets'][0]['browser_download_url'])[0]
 
@@ -219,60 +160,16 @@ class Application(Frame):
                 self.folders.append('for regularly used SD card')
                 self.folders.append('for SDNAND SD card')
                 self.files.append(filename)
-                Thread(target=self.decrypt_launcher).start()
+                Thread(target=self.extract_bios).start()
 
             else:
                 self.log('Extractor failed')
 
-        except IOError:
+        except (URLError, IOError) as e:
             self.log('ERROR: Could not get HiyaCFW')
 
         except OSError:
             self.log('ERROR: Could not execute ' + exe)
-
-
-    ################################################################################################
-    def decrypt_launcher(self):
-        self.log('')
-        self.log('Decrypting launcher...')
-
-        exe = path.join('for PC', 'twltool') if sysname == 'Windows' else path.join(sysname,
-            'twltool')
-
-        try:
-            proc = Popen([ exe, 'modcrypt', '--in', self.launcher_file.get(), '--out',
-                '00000002.app' ])
-
-            ret_val = proc.wait()
-
-            if ret_val == 0:
-                Thread(target=self.patch_launcher).start()
-
-            else:
-                self.log('Decryptor failed')
-
-        except OSError:
-            self.log('ERROR: Could not execute ' + exe)
-
-
-    ################################################################################################
-    def patch_launcher(self):
-        self.log('')
-        self.log('Patching launcher...')
-
-        patch = path.join('for PC', 'v1.4 Launcher (00000002.app)' +
-            (' (JAP-KOR)' if self.launcher_region == 'JAP' else '') + ' patch.ips')
-
-        try:
-            self.patcher(patch, '00000002.app')
-
-            Thread(target=self.extract_bios).start()
-
-        except IOError:
-            self.log('ERROR: Could not patch BIOS')
-
-        except Exception:
-            self.log('ERROR: Invalid patch header')
 
 
     ################################################################################################
@@ -409,7 +306,7 @@ class Application(Frame):
 
                 if proc.returncode == 0:
                     self.mounted = search(r'[a-zA-Z]:\s', outs).group(0).strip()
-                    self.log('Mounted on drive ' + self.mounted)
+                    self.log('- Mounted on drive ' + self.mounted)
 
                     Thread(target=self.extract_nand).start()
 
@@ -427,7 +324,7 @@ class Application(Frame):
 
                 if proc.returncode == 0:
                     self.raw_disk = search(r'^\/dev\/disk\d+', outs).group(0)
-                    self.log('Mounted raw disk on ' + self.raw_disk)
+                    self.log('- Mounted raw disk on ' + self.raw_disk)
 
                     proc = Popen([ exe, 'mount', '-readonly', self.raw_disk + 's1' ], stdin=PIPE,
                         stdout=PIPE, stderr=PIPE)
@@ -436,7 +333,7 @@ class Application(Frame):
 
                     if proc.returncode == 0:
                         self.mounted = search(r'\/Volumes\/.+', outs).group(0)
-                        self.log('Mounted volume on ' + self.mounted)
+                        self.log('- Mounted volume on ' + self.mounted)
 
                         Thread(target=self.extract_nand).start()
 
@@ -455,7 +352,7 @@ class Application(Frame):
 
                 if proc.returncode == 0:
                     self.loop_dev = search(r'\/dev\/loop\d+', outs).group(0)
-                    self.log('Mounted loop device on ' + self.loop_dev)
+                    self.log('- Mounted loop device on ' + self.loop_dev)
 
                     exe = 'mount'
 
@@ -466,7 +363,7 @@ class Application(Frame):
                     ret_val = proc.wait()
 
                     if ret_val == 0:
-                        self.log('Mounted partition on ' + self.mounted)
+                        self.log('- Mounted partition on ' + self.mounted)
 
                         Thread(target=self.extract_nand).start()
 
@@ -542,10 +439,161 @@ class Application(Frame):
 
         copy_tree('for SDNAND SD card', 'out', update=1)
         move('bootloader.nds', path.join('out', 'hiya', 'bootloader.nds'))
-        move('00000002.app', path.join('out', 'title', '00030017', '484e41' +
-        	self.REGION_CODES[self.launcher_region], 'content', '00000002.app'))
 
-        Thread(target=self.get_latest_twilight if self.twilight.get() == 1 else self.clean).start()
+        Thread(target=self.get_launcher).start()
+
+
+    ################################################################################################
+    def get_launcher(self):
+        self.log('')
+        self.log('Downloading launcher...')
+
+        HEADER = { 'User-Agent': 'Opera/9.50 (Nintendo; Opera/154; U; Nintendo DS; en)' }
+
+        C_K = '\xAF\x1B\xF5\x16\xA8\x07\xD2\x1A\xEAE\x98O\x04t(a'
+
+        app = self.detect_region()
+
+        # Stop if no supported region was found
+        if not app:
+            return
+
+        title_url = 'http://nus.cdn.t.shop.nintendowifi.net/ccs/download/00030017' + app + '/'
+
+        # Download ticket to memory
+        self.log('- Downloading ticket...')
+        try:
+            conn = urlopen(Request(title_url + 'cetk', None, HEADER));
+            ticket_raw = conn.read()
+            conn.close()
+
+        except URLError:
+            self.log('ERROR: Could not download ticket')
+            return
+
+        # Load encrypted title key
+        encrypted_title_key = unpack_from('16s', ticket_raw, 0x1BF)[0]
+
+        # Decrypt it
+        iv = unpack_from('8s', ticket_raw, 0x1DC)[0].ljust(16, '\0')
+
+        title_key = AESModeOfOperationCBC(C_K, iv).decrypt(encrypted_title_key)
+
+        # Download TMD to memory
+        self.log('- Downloading TMD...')
+        try:
+            conn = urlopen(Request(title_url + 'tmd.512', None, HEADER))
+            tmd_raw = conn.read()
+            conn.close()
+
+        except URLError:
+            self.log('ERROR: Could not download TMD')
+            return
+
+        # Load number of contents
+        num_contents = unpack_from('>H', tmd_raw, 0x1DE)[0]
+
+        # Read and download contents, decrypt and save them
+        content_offset = 0x1E4
+
+        for i in range(num_contents):
+            content_id = hexlify(unpack_from('4s', tmd_raw, content_offset)[0])
+
+            # Check if it is the content we are looking for
+            if content_id != '00000002':
+                content_offset += 36
+                continue
+
+            content_offset += 4
+
+            iv = unpack_from('2s', tmd_raw, content_offset)[0].ljust(16, '\0')
+            content_offset += 4
+
+            content_size = unpack_from('>Q', tmd_raw, content_offset)[0]
+            content_offset += 8
+
+            content_hash = unpack_from('20s', tmd_raw, content_offset)[0]
+            content_offset += 20
+
+            # Download content
+            self.log('- Downloading encrypted content...')
+            try:
+                conn = urlopen(Request(title_url + content_id, None, HEADER))
+                content_raw = conn.read()
+                conn.close()
+
+            except URLError:
+                self.log('ERROR: Could not download ' + content_id)
+                return
+
+            self.log('- Decrypting content...')
+            decrypted_content = Decrypter(AESModeOfOperationCBC(title_key,
+                iv)).feed(content_raw).ljust(content_size, '\xFF')
+
+            sha1_hash = sha1()
+            sha1_hash.update(decrypted_content)
+
+            if sha1_hash.digest() == content_hash:
+                self.log('- Saving 00000002.app...')
+
+                self.launcher_file = path.join('out', 'title', '00030017', app, 'content',
+                    '00000002.app')
+
+                with open(self.launcher_file, 'wb') as f:
+                    f.write(decrypted_content)
+
+                Thread(target=self.decrypt_launcher).start()
+
+            else:
+                self.log('ERROR: Hash did not match, file not saved')
+
+            return
+
+        self.log('ERROR: No valid content found')
+
+
+    ################################################################################################
+    def decrypt_launcher(self):
+        self.log('')
+        self.log('Decrypting launcher...')
+
+        exe = path.join('for PC', 'twltool') if sysname == 'Windows' else path.join(sysname,
+            'twltool')
+
+        try:
+            proc = Popen([ exe, 'modcrypt', '--in', self.launcher_file ])
+
+            ret_val = proc.wait()
+
+            if ret_val == 0:
+                Thread(target=self.patch_launcher).start()
+
+            else:
+                self.log('Decryptor failed')
+
+        except OSError:
+            self.log('ERROR: Could not execute ' + exe)
+
+
+    ################################################################################################
+    def patch_launcher(self):
+        self.log('')
+        self.log('Patching launcher...')
+
+        patch = path.join('for PC', 'v1.4 Launcher (00000002.app)' +
+            (' (JAP-KOR)' if self.launcher_region == 'JAP' else '') + ' patch.ips')
+
+        try:
+            self.patcher(patch, self.launcher_file)
+
+            Thread(target=self.get_latest_twilight if self.twilight.get() == 1
+                else self.clean).start()
+
+        except IOError:
+            self.log('ERROR: Could not patch launcher')
+
+        except Exception:
+            self.log('ERROR: Invalid patch header')
 
 
     ################################################################################################
@@ -555,9 +603,9 @@ class Application(Frame):
         self.log('TWiLight Menu++ release...')
 
         try:
-            txt = urlopen('https://api.github.com/repos/Robz8/TWiLightMenu/releases/latest')
-            latest = jsonify(txt.read())
-            txt.close()
+            conn = urlopen('https://api.github.com/repos/Robz8/TWiLightMenu/releases/latest')
+            latest = jsonify(conn.read())
+            conn.close()
 
             filename = urlretrieve(latest['assets'][0]['browser_download_url'])[0]
 
@@ -584,7 +632,7 @@ class Application(Frame):
             else:
                 self.log('Extractor failed')
 
-        except IOError:
+        except (URLError, IOError) as e:
             self.log('ERROR: Could not get TWiLight Menu++')
 
         except OSError:
@@ -697,6 +745,29 @@ class Application(Frame):
         # Read an n-byte big-endian integer from a byte string
         ( ret_val, ) = unpack_from('>I', b'\x00' * (4 - len(bstr)) + bstr)
         return ret_val
+
+
+    ################################################################################################
+    def detect_region(self):
+        REGION_CODES = {
+            '484e4145': 'USA',
+            '484e414a': 'JAP',
+            '484e4150': 'EUR',
+            '484e4155': 'AUS'
+        }
+
+        # Autodetect console region
+        for app in listdir(path.join('out', 'title', '00030017')):
+            for folder in listdir(path.join('out', 'title', '00030017', app)):
+                if folder == 'data':
+                    try:
+                        self.log('- Detected ' + REGION_CODES[app] + ' console NAND dump')
+                        self.launcher_region = REGION_CODES[app]
+                        return app
+
+                    except KeyError:
+                        self.log('ERROR: Unsupported console region')
+                        return False
 
 
 ####################################################################################################
