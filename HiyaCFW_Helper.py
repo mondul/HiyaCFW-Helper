@@ -183,15 +183,14 @@ class Application(Frame):
 
             filename = urlretrieve(latest['assets'][0]['browser_download_url'])[0]
 
-            exe = path.join(sysname, '7zDec')
+            exe = path.join(sysname, '7za')
 
-            proc = Popen([ exe, 'x', filename ])
+            proc = Popen([ exe, 'x', '-bso0', '-y', filename, 'for PC', 'for SDNAND SD card' ])
 
             ret_val = proc.wait()
 
             if ret_val == 0:
                 self.folders.append('for PC')
-                self.folders.append('for regularly used SD card')
                 self.folders.append('for SDNAND SD card')
                 self.files.append(filename)
                 Thread(target=self.extract_bios).start()
@@ -630,24 +629,19 @@ class Application(Frame):
 
             filename = urlretrieve(latest['assets'][0]['browser_download_url'])[0]
 
-            exe = path.join(sysname, '7zDec')
+            exe = path.join(sysname, '7za')
 
-            proc = Popen([ exe, 'x', filename ])
+            proc = Popen([ exe, 'x', '-bso0', '-y', filename, 'Autoboot for HiyaCFW',
+                'CFW - SDNAND root', 'DSiWare (' + self.launcher_region + ')', '_nds', 'roms',
+                'BOOT.NDS' ])
 
             ret_val = proc.wait()
 
             if ret_val == 0:
                 self.folders.append('Autoboot for HiyaCFW')
                 self.folders.append('CFW - SDNAND root')
-                self.folders.append('cia')
-                self.folders.append('DSiWare (AUS)')
-                self.folders.append('DSiWare (EUR)')
-                self.folders.append('DSiWare (JAP)')
-                self.folders.append('DSiWare (USA)')
-                self.folders.append('Flashcard autoboot')
-                self.folders.append('Unlaunch (no CFW) - SD root')
+                self.folders.append('DSiWare (' + self.launcher_region + ')')
                 self.files.append(filename)
-                self.files.append('BOOT_fc.NDS')
                 Thread(target=self.install_twilight).start()
 
             else:
