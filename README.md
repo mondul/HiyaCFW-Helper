@@ -27,7 +27,7 @@ All that you have to do then is copy the contents of the "out" folder onto your 
 * Nothing, as it already includes Python 2.7 with the Tk library and doesn't need root to mount the decrypted NAND.
 
 ## What it includes:
-* 7zDec binaries for Windows, Linux and MacOS. It's used to decompress the HiyaCFW latest release as [@RocketRobz](https://github.com/RocketRobz) uploaded it as a 7z archive. Compiled from the LZMA SDK available from the 7-zip website.
+* 7za binaries for Windows, Linux and MacOS. It's used to decompress the HiyaCFW latest release as [@RocketRobz](https://github.com/RocketRobz) uploaded it as a 7z archive. Compiled from the [kornelski's GitHub repo](https://github.com/kornelski/7z).
 * twltool binaries for Linux and MacOS. Compiled from the [WinterMute's GitHub repo](https://github.com/WinterMute/twltool). For Windows the one included with HiyaCFW is used.
 * NDS bootloader creator binaries for Linux and MacOS (based off devkitPro's ndstool v1.27). Compiled from [my GitHub repo](https://github.com/mondul/NDS-Bootloader-Creator). For Windows the ndstool included with HiyaCFW is used.
 * In order to decrypt the launcher, the pyaes library by ricmoo, taken from [his GitHub repo](https://github.com/ricmoo/pyaes), was used.
