@@ -177,7 +177,7 @@ class Application(Frame):
         self.log.write('\nDownloading and extracting latest HiyaCFW release...\n')
 
         try:
-            conn = urlopen('https://api.github.com/repos/Robz8/hiyaCFW/releases/latest')
+            conn = urlopen('https://api.github.com/repos/RocketRobz/hiyaCFW/releases/latest')
             latest = jsonify(conn.read())
             conn.close()
 
@@ -624,7 +624,7 @@ class Application(Frame):
         self.log.write('TWiLight Menu++ release...\n')
 
         try:
-            conn = urlopen('https://api.github.com/repos/Robz8/TWiLightMenu/releases/latest')
+            conn = urlopen('https://api.github.com/repos/RocketRobz/TWiLightMenu/releases/latest')
             latest = jsonify(conn.read())
             conn.close()
 
