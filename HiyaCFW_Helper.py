@@ -696,6 +696,14 @@ class Application(Frame):
         while len(self.files) > 0:
             remove(self.files.pop())
 
+        # Change owner of the out folder in Linux
+        if sysname == 'Linux':
+            from os import getlogin
+
+            ug = getlogin()
+
+            Popen([ 'chown', '-R', ug + ':' + ug, 'out' ]).wait()
+
         self.log.write("\nDone!\nMove the contents of the out folder to your DSi's\nSD card")
 
 
