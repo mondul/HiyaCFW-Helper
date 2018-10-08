@@ -148,7 +148,7 @@ class Application(Frame):
         try:
             with open(self.nand_file.get(), 'rb') as f:
                 # Go to the No$GBA footer offset
-                f.seek(0xF000000)
+                f.seek(-64, 2)
                 # Read the footer's header :-)
                 bstr = f.read(0x10)
 
