@@ -19,7 +19,6 @@ from struct import unpack_from
 from re import search
 from shutil import move, rmtree
 from distutils.dir_util import copy_tree
-from stat import S_IREAD, S_IRGRP, S_IROTH
 
 libdir.append('pyaes')
 
@@ -668,8 +667,8 @@ class Application(Frame):
             path.join('out', 'hiya', 'autoboot.bin'))
 
         # Set files as read-only
-        chmod(path.join('out', 'shared1', 'TWLCFG0.dat'), S_IREAD | S_IRGRP | S_IROTH)
-        chmod(path.join('out', 'shared1', 'TWLCFG1.dat'), S_IREAD | S_IRGRP | S_IROTH)
+        chmod(path.join('out', 'shared1', 'TWLCFG0.dat'), 292)
+        chmod(path.join('out', 'shared1', 'TWLCFG1.dat'), 292)
 
         # Generate launchargs
         for app in listdir(path.join('out', 'title', '00030004')):
