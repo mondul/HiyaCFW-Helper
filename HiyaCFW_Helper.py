@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
-from Tkinter import (Tk, Frame, LabelFrame, Entry, Button, Checkbutton, Toplevel, Scrollbar,
-    Text, StringVar, IntVar, LEFT, RIGHT, X, Y, DISABLED, NORMAL, SUNKEN, SINGLE, END)
-from tkMessageBox import showerror
+from Tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutton, Radiobutton,
+    Label, Toplevel, Scrollbar, Text, StringVar, IntVar, LEFT, RIGHT, N, W, X, Y, DISABLED, NORMAL,
+    SUNKEN, END)
+from tkMessageBox import showerror, askokcancel, WARNING
 from tkFileDialog import askopenfilename
 from platform import system
 from os import path, remove, chmod, listdir
@@ -69,32 +70,119 @@ class Application(Frame):
         # First row
         f1 = LabelFrame(self, text='NAND file with No$GBA footer', padx=10, pady=10)
 
+        # NAND Button
+        self.nand_mode = False
+
+        nand_icon = PhotoImage(data=('R0lGODlhEAAQAIMAAAAAADMzM2ZmZpmZmczMzP///wAAAAAAAAA'
+            'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAMAAAYALAAAAAAQAB'
+            'AAAARG0MhJaxU4Y2sECAEgikE1CAFRhGMwSMJwBsU6frIgnR/bv'
+            'hTPrWUSDnGw3JGU2xmHrsvyU5xGO8ql6+S0AifPW8kCKpcpEQA7'))
+
+        self.nand_button = Button(f1, image=nand_icon, command=self.change_mode, state=DISABLED)
+        self.nand_button.image = nand_icon
+
+        self.nand_button.pack(side='left')
+
         self.nand_file = StringVar()
         Entry(f1, textvariable=self.nand_file, state='readonly', width=40).pack(side='left')
 
         Button(f1, text='...', command=self.choose_nand).pack(side='left')
 
-        f1.pack(padx=10, pady=10)
-
-        # Check box
-        self.twilight = IntVar()
-        self.twilight.set(1)
-        chk = Checkbutton(self, text='Install latest TWiLight Menu++ on custom firmware',
-            justify=LEFT, variable=self.twilight)
-        chk.pack(padx=10, fill=X)
+        f1.pack(padx=10, pady=10, fill=X)
 
         # Second row
         f2 = Frame(self)
 
-        self.start_button = Button(f2, text='Start', width=16, command=self.hiya, state=DISABLED)
+        # Check box
+        self.twilight = IntVar()
+        self.twilight.set(1)
+
+        self.chk = Checkbutton(f2, text='Install latest TWiLight Menu++ on custom firmware',
+            variable=self.twilight)
+
+        self.chk.pack(padx=10, anchor=W)
+
+        # NAND operation frame
+        self.nand_frame = LabelFrame(f2, text='NAND operation', padx=10, pady=10)
+
+        fl = Frame(self.nand_frame)
+
+        self.nand_operation = StringVar()
+        self.nand_operation.set('UU')
+
+        Radiobutton(fl, text='Uninstall unlaunch', variable=self.nand_operation,
+            value='UU', command=lambda: self.enable_entries(False)).pack(anchor=W)
+
+        Radiobutton(fl, text='Remove No$GBA footer', variable=self.nand_operation,
+            value='RF', command=lambda: self.enable_entries(False)).pack(anchor=W)
+
+        Radiobutton(fl, text='Install latest unlaunch', variable=self.nand_operation,
+            value='IU', command=lambda: self.enable_entries(False)).pack(anchor=W)
+
+        fl.pack(anchor=N, side='left')
+
+        fr = Frame(self.nand_frame)
+
+        Radiobutton(fr, text='Add No$GBA footer', variable=self.nand_operation,
+            value='AF', command=lambda: self.enable_entries(True)).pack(anchor=W)
+
+        self.cid_label = Label(fr, text='eMMC CID', state=DISABLED)
+        self.cid_label.pack(anchor=W, padx=(24, 0))
+
+        self.cid = StringVar()
+        self.cid_entry = Entry(fr, textvariable=self.cid, width=20, state=DISABLED)
+        self.cid_entry.pack(anchor=W, padx=(24, 0))
+
+        self.console_id_label = Label(fr, text='Console ID', state=DISABLED)
+        self.console_id_label.pack(anchor=W, padx=(24, 0))
+
+        self.console_id = StringVar()
+        self.console_id_entry = Entry(fr, textvariable=self.console_id, width=20, state=DISABLED)
+        self.console_id_entry.pack(anchor=W, padx=(24, 0))
+
+        fr.pack(side='right')
+
+        f2.pack(fill=X)
+
+        # Third row
+        f3 = Frame(self)
+
+        self.start_button = Button(f3, text='Start', width=16, command=self.hiya, state=DISABLED)
         self.start_button.pack(side='left', padx=(0, 5))
 
-        Button(f2, text='Quit', command=root.destroy, width=16).pack(side='left', padx=(5, 0))
+        Button(f3, text='Quit', command=root.destroy, width=16).pack(side='left', padx=(5, 0))
 
-        f2.pack(pady=(10, 20))
+        f3.pack(pady=(10, 20))
+
+        x = LabelFrame(self, text='NAND file with No$GBA footer', padx=10, pady=10)
+        Button(x, text='Button')
+        x.pack(fill=X)
 
         self.folders = []
         self.files = []
+
+
+    ################################################################################################
+    def change_mode(self):
+        if (self.nand_mode):
+            self.nand_frame.pack_forget()
+            self.chk.pack(padx=10, anchor=W)
+            self.nand_mode = False
+
+        else:
+            if askokcancel('Warning', ('You are about to enter NAND mode. Do it only if you know '
+                'what you are doing. Proceed?'), icon=WARNING):
+                self.chk.pack_forget()
+                self.nand_frame.pack(padx=10, pady=(0, 10), fill=X)
+                self.nand_mode = True
+
+
+    ################################################################################################
+    def enable_entries(self, status):
+        self.cid_label['state'] = (NORMAL if status else DISABLED)
+        self.cid_entry['state'] = (NORMAL if status else DISABLED)
+        self.console_id_label['state'] = (NORMAL if status else DISABLED)
+        self.console_id_entry['state'] = (NORMAL if status else DISABLED)
 
 
     ################################################################################################
@@ -102,6 +190,7 @@ class Application(Frame):
         name = askopenfilename(filetypes=( ( 'nand.bin', '*.bin' ), ( 'DSi-1.mmc', '*.mmc' ) ))
         self.nand_file.set(name)
 
+        self.nand_button['state'] = (NORMAL if self.nand_file.get() != '' else DISABLED)
         self.start_button['state'] = (NORMAL if self.nand_file.get() != '' else DISABLED)
 
 
@@ -154,12 +243,13 @@ class Application(Frame):
                 if bstr == b'DSi eMMC CID/CPU':
                     # Read the CID
                     bstr = f.read(0x10)
-                    self.log.write('- eMMC CID: ' + hexlify(bstr).upper() + '\n')
+                    self.cid.set(hexlify(bstr).upper())
+                    self.log.write('- eMMC CID: ' + self.cid.get() + '\n')
 
                     # Read the console ID
                     bstr = f.read(8)
-                    self.console_id = hexlify(bytearray(reversed(bstr))).upper()
-                    self.log.write('- Console ID: ' + self.console_id + '\n')
+                    self.console_id.set(hexlify(bytearray(reversed(bstr))).upper())
+                    self.log.write('- Console ID: ' + self.console_id.get() + '\n')
 
                     Thread(target=self.get_latest_hiyacfw).start()
 
@@ -302,12 +392,12 @@ class Application(Frame):
 
         try:
             proc = Popen([ exe, 'nandcrypt', '--in', self.nand_file.get(), '--out',
-            	self.console_id + '.img' ])
+            	self.console_id.get() + '.img' ])
 
             ret_val = proc.wait()
 
             if ret_val == 0:
-                self.files.append(self.console_id + '.img')
+                self.files.append(self.console_id.get() + '.img')
                 Thread(target=self.mount_nand).start()
 
             else:
@@ -325,8 +415,8 @@ class Application(Frame):
             if sysname == 'Windows':
                 exe = osfmount
 
-                proc = Popen([ osfmount, '-a', '-t', 'file', '-f', self.console_id + '.img', '-m',
-                    '#:', '-o', 'ro,rem' ], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                proc = Popen([ osfmount, '-a', '-t', 'file', '-f', self.console_id.get() + '.img',
+                    '-m', '#:', '-o', 'ro,rem' ], stdin=PIPE, stdout=PIPE, stderr=PIPE)
 
                 outs, errs = proc.communicate()
 
@@ -343,7 +433,7 @@ class Application(Frame):
                 exe = 'hdiutil'
 
                 proc = Popen([ exe, 'attach', '-readonly', '-imagekey',
-                    'diskimage-class=CRawDiskImage', '-nomount', self.console_id + '.img' ],
+                    'diskimage-class=CRawDiskImage', '-nomount', self.console_id.get() + '.img' ],
                     stdin=PIPE, stdout=PIPE, stderr=PIPE)
 
                 outs, errs = proc.communicate()
@@ -372,7 +462,7 @@ class Application(Frame):
             else:  # Linux
                 exe = 'losetup'
 
-                proc = Popen([ exe, '-P', '-r', '-f', '--show', self.console_id + '.img' ],
+                proc = Popen([ exe, '-P', '-r', '-f', '--show', self.console_id.get() + '.img' ],
                     stdin=PIPE, stdout=PIPE, stderr=PIPE)
                 outs, errs = proc.communicate()
 
