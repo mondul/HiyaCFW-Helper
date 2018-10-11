@@ -14,6 +14,9 @@ In order to make things easier for me, and because I don't have Windows, I edite
 
 All that you have to do then is copy the contents of the "out" folder onto your (preferably empty) SD card.
 
+### _NAND mode:_
+Clicking on the integrated circuit button will give you a NAND mode, where you can uninstall unlaunch or install its v1.4 stable release, remove the No$GBA footer or add it. Recommended only for those with a hardmod.
+
 ## Requirements:
 ### _Windows:_
 * OSFMount.
@@ -28,9 +31,10 @@ All that you have to do then is copy the contents of the "out" folder onto your 
 
 ## What it includes:
 * 7za binaries for Windows, Linux and MacOS. It's used to decompress the HiyaCFW latest release as [@RocketRobz](https://github.com/RocketRobz) uploaded it as a 7z archive. Compiled from the [kornelski's GitHub repo](https://github.com/kornelski/7z).
-* twltool binaries for Linux and MacOS. Compiled from the [WinterMute's GitHub repo](https://github.com/WinterMute/twltool). For Windows the one included with HiyaCFW is used.
+* twltool binaries for Windows, Linux and MacOS. Compiled from the [WinterMute's GitHub repo](https://github.com/WinterMute/twltool).
 * NDS bootloader creator binaries for Linux and MacOS (based off devkitPro's ndstool v1.27). Compiled from [my GitHub repo](https://github.com/mondul/NDS-Bootloader-Creator). For Windows the ndstool included with HiyaCFW is used.
 * In order to decrypt the launcher, the pyaes library by ricmoo, taken from [his GitHub repo](https://github.com/ricmoo/pyaes), was used.
+* fatattr binary for Linux. It's used for setting FAT attributes in NAND mode. Compiled from the [Terseus' GitHub repo](https://github.com/Terseus/fatattr).
 
 Thanks to:
 * jerbear64 and LmN for the original script.

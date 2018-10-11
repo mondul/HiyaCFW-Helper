@@ -6,7 +6,7 @@ from Tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutt
 from tkMessageBox import showerror, askokcancel, WARNING
 from tkFileDialog import askopenfilename
 from platform import system
-from os import path, remove, chmod, listdir
+from os import path, remove, chmod, listdir, rename
 from sys import exit, path as libdir
 from threading import Thread
 from Queue import Queue, Empty
@@ -213,7 +213,13 @@ class Application(Frame):
         dialog.geometry('%dx%d+%d+%d' % (width, height, root.winfo_x() + (root.winfo_width() / 2) -
             (width / 2), root.winfo_y() + (root.winfo_height() / 2) - (height / 2)))
 
-        Thread(target=self.check_nand).start()
+        # Check if we'll be adding a No$GBA footer
+        if self.nand_mode and self.nand_operation.get() == 2:
+            #Thread(target=self.add_footer).start()
+            pass
+
+        else:
+            Thread(target=self.check_nand).start()
 
 
     ################################################################################################
@@ -239,7 +245,17 @@ class Application(Frame):
                     self.console_id.set(hexlify(bytearray(reversed(bstr))).upper())
                     self.log.write('- Console ID: ' + self.console_id.get())
 
-                    Thread(target=self.get_latest_hiyacfw).start()
+                    # Check we are making an unlaunch operation or removing the No$GBA footer
+                    if self.nand_mode:
+                        if self.nand_operation.get() == 0:
+                            Thread(target=self.decrypt_nand).start()
+
+                        else:
+                            #Thread(target=self.remove_footer).start()
+                            pass
+
+                    else:
+                        Thread(target=self.get_latest_hiyacfw).start()
 
                 else:
                     self.log.write('ERROR: No$GBA footer not found')
@@ -383,7 +399,9 @@ class Application(Frame):
             ret_val = proc.wait()
 
             if ret_val == 0:
-                self.files.append(self.console_id.get() + '.img')
+                if not self.nand_mode:
+                    self.files.append(self.console_id.get() + '.img')
+
                 Thread(target=self.mount_nand).start()
 
             else:
@@ -401,8 +419,13 @@ class Application(Frame):
             if sysname == 'Windows':
                 exe = osfmount
 
-                proc = Popen([ osfmount, '-a', '-t', 'file', '-f', self.console_id.get() + '.img',
-                    '-m', '#:', '-o', 'ro,rem' ], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                cmd = [ osfmount, '-a', '-t', 'file', '-f', self.console_id.get() + '.img', '-m',
+                    '#:', '-o', 'ro,rem' ]
+
+                if self.nand_mode:
+                    cmd[-1] = 'rw,rem'
+
+                proc = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
 
                 outs, errs = proc.communicate()
 
@@ -417,9 +440,13 @@ class Application(Frame):
             elif sysname == 'Darwin':
                 exe = 'hdiutil'
 
-                proc = Popen([ exe, 'attach', '-readonly', '-imagekey',
-                    'diskimage-class=CRawDiskImage', '-nomount', self.console_id.get() + '.img' ],
-                    stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                cmd = [ exe, 'attach', '-imagekey', 'diskimage-class=CRawDiskImage', '-nomount',
+                    self.console_id.get() + '.img' ]
+
+                if not self.nand_mode:
+                    cmd.insert(2, '-readonly')
+
+                proc = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
 
                 outs, errs = proc.communicate()
 
@@ -427,8 +454,12 @@ class Application(Frame):
                     self.raw_disk = search(r'^\/dev\/disk\d+', outs).group(0)
                     self.log.write('- Mounted raw disk on ' + self.raw_disk)
 
-                    proc = Popen([ exe, 'mount', '-readonly', self.raw_disk + 's1' ], stdin=PIPE,
-                        stdout=PIPE, stderr=PIPE)
+                    cmd = [ exe, 'mount', self.raw_disk + 's1' ]
+
+                    if not self.nand_mode:
+                        cmd.insert(2, '-readonly')
+
+                    proc = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
 
                     outs, errs = proc.communicate()
 
@@ -447,8 +478,12 @@ class Application(Frame):
             else:  # Linux
                 exe = 'losetup'
 
-                proc = Popen([ exe, '-P', '-r', '-f', '--show', self.console_id.get() + '.img' ],
-                    stdin=PIPE, stdout=PIPE, stderr=PIPE)
+                cmd = [ exe, '-P', '-f', '--show', self.console_id.get() + '.img' ]
+
+                if not self.nand_mode:
+                    cmd.insert(2, '-r')
+
+                proc = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
                 outs, errs = proc.communicate()
 
                 if proc.returncode == 0:
@@ -459,7 +494,12 @@ class Application(Frame):
 
                     self.mounted = '/mnt'
 
-                    proc = Popen([ exe, '-r', '-t', 'vfat', self.loop_dev + 'p1', self.mounted ])
+                    cmd = [ exe, '-t', 'vfat', self.loop_dev + 'p1', self.mounted ]
+
+                    if not self.nand_mode:
+                        cmd.insert(1, '-r')
+
+                    proc = Popen(cmd)
 
                     ret_val = proc.wait()
 
@@ -474,7 +514,8 @@ class Application(Frame):
                     self.log.write('ERROR: Mounter failed')
                     return
 
-            Thread(target=self.extract_nand).start()
+            # Check we are making an unlaunch operation
+            Thread(target=self.unlaunch_proc if self.nand_mode else self.extract_nand).start()
 
         except OSError:
             self.log.write('ERROR: Could not execute ' + exe)
@@ -524,7 +565,7 @@ class Application(Frame):
             ret_val = proc.wait()
 
             if ret_val == 0:
-                Thread(target=self.install_hiyacfw).start()
+                Thread(target=self.encrypt_nand if self.nand_mode else self.install_hiyacfw).start()
 
             else:
                 self.log.write('ERROR: Unmounter failed')
@@ -771,6 +812,14 @@ class Application(Frame):
         while len(self.files) > 0:
             remove(self.files.pop())
 
+        if (self.nand_mode):
+            file = self.console_id.get() + self.suffix + '.img'
+
+            rename(self.console_id.get() + '.img', file)
+
+            self.log.write('\nDone!\nModified NAND stored as\n' + file)
+            return
+
         # Change owner of the out folder in Linux
         if sysname == 'Linux':
             from os import getlogin
@@ -844,8 +893,10 @@ class Application(Frame):
         }
 
         # Autodetect console region
-        for app in listdir(path.join('out', 'title', '00030017')):
-            for folder in listdir(path.join('out', 'title', '00030017', app)):
+        base = self.mounted if self.nand_mode else 'out'
+
+        for app in listdir(path.join(base, 'title', '00030017')):
+            for folder in listdir(path.join(base, 'title', '00030017', app)):
                 if folder == 'data':
                     try:
                         self.log.write('- Detected ' + REGION_CODES[app] + ' console NAND dump')
@@ -855,6 +906,117 @@ class Application(Frame):
                     except KeyError:
                         self.log.write('ERROR: Unsupported console region')
                         return False
+
+
+    ################################################################################################
+    def unlaunch_proc(self):
+        self.log.write('\nChecking unlaunch status...')
+
+        app = self.detect_region()
+
+        # Stop if no supported region was found
+        if not app:
+            # TODO: Unmount NAND
+            return
+
+        tmd = path.join(self.mounted, 'title', '00030017', app, 'content', 'title.tmd')
+
+        tmd_size = path.getsize(tmd)
+
+        if tmd_size == 520:
+            self.log.write('- Not installed. Downloading v1.4...')
+
+            try:
+                filename = urlretrieve('http://problemkaputt.de/unlau14.zip')[0]
+
+                exe = path.join(sysname, '7za')
+
+                proc = Popen([ exe, 'x', '-bso0', '-y', filename, 'UNLAUNCH.DSI' ])
+
+                ret_val = proc.wait()
+
+                if ret_val == 0:
+                    self.files.append(filename)
+                    self.files.append('UNLAUNCH.DSI')
+
+                    self.log.write('- Installing unlaunch...')
+
+                    self.suffix = '-unlaunch'
+
+                    with open(tmd, 'ab') as f:
+                        with open('UNLAUNCH.DSI', 'rb') as unl:
+                            f.write(unl.read())
+
+                    # Set files as read-only
+                    for file in listdir(path.join(self.mounted, 'title', '00030017', app,
+                        'content')):
+                        file = path.join(self.mounted, 'title', '00030017', app, 'content', file)
+
+                        if sysname == 'Darwin':
+                            Popen([ 'chflags', 'uchg', file ]).wait()
+
+                        elif sysname == 'Linux':
+                            Popen([ path.join('Linux', 'fatattr'), '+R', file ]).wait()
+   
+                        else:
+                            chmod(file, 292)
+
+                else:
+                    self.log.write('ERROR: Extractor failed')
+                    # TODO: Unmount NAND
+
+
+            except IOError:
+                self.log.write('ERROR: Could not get unlaunch')
+                # TODO: Unmount NAND
+
+            except OSError:
+                self.log.write('ERROR: Could not execute ' + exe)
+                # TODO: Unmount NAND
+
+        else:
+            self.log.write('- Installed. Uninstalling...')
+
+            self.suffix = '-no-unlaunch'
+
+            # Set files as read-write
+            for file in listdir(path.join(self.mounted, 'title', '00030017', app, 'content')):
+                file = path.join(self.mounted, 'title', '00030017', app, 'content', file)
+
+                if sysname == 'Darwin':
+                    Popen([ 'chflags', 'nouchg', file ]).wait()
+
+                elif sysname == 'Linux':
+                    Popen([ path.join('Linux', 'fatattr'), '-R', file ]).wait()
+   
+                else:
+                    chmod(file, 438)
+
+            with open(tmd, 'r+b') as f:
+                f.truncate(520)
+
+        Thread(target=self.unmount_nand).start()
+
+
+    ################################################################################################
+    def encrypt_nand(self):
+        self.log.write('\nEncrypting back NAND...')
+
+        exe = path.join(sysname, 'twltool')
+
+        try:
+            proc = Popen([ exe, 'nandcrypt', '--in', self.console_id.get() + '.img' ])
+
+            ret_val = proc.wait()
+
+            if ret_val == 0:
+                Thread(target=self.clean).start()
+
+            else:
+                self.log.write('ERROR: Encryptor failed')
+
+        except OSError:
+            self.log.write('ERROR: Could not execute ' + exe)
 
 
 ####################################################################################################
