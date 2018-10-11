@@ -23,7 +23,7 @@ Clicking on the integrated circuit button will give you a NAND mode, where you c
 * You will need to run the _HiyaCFW_Helper.exe_ file as administrator in order to mount the decrypted NAND.
 
 ### _Linux:_
-* Python 2.7 with the Tk library (I had to do `sudo apt-get install python python-tk -y` in my LUbuntu virtual machine).
+* Python 2.7 with the Tk library (I had to do `sudo apt-get install python python-tk -y` in my LUbuntu virtual machine; `sudo dnf install python-tkinter` in Fedora).
 * You will need to run the script as sudo in order to mount the decrypted NAND.
 
 ### _MacOS:_
@@ -35,6 +35,21 @@ Clicking on the integrated circuit button will give you a NAND mode, where you c
 * NDS bootloader creator binaries for Linux and MacOS (based off devkitPro's ndstool v1.27). Compiled from [my GitHub repo](https://github.com/mondul/NDS-Bootloader-Creator). For Windows the ndstool included with HiyaCFW is used.
 * In order to decrypt the launcher, the pyaes library by ricmoo, taken from [his GitHub repo](https://github.com/ricmoo/pyaes), was used.
 * fatattr binary for Linux. It's used for setting FAT attributes in NAND mode. Compiled from the [Terseus' GitHub repo](https://github.com/Terseus/fatattr).
+
+## How to use it:
+### _Windows:_
+* Go to the helper's folder.
+* Right-click on the _HiyaCFW_Helper.exe_ file and click _Run as administrator_.
+
+### _Linux:_
+* Open a terminal.
+* _cd_ to the helper's folder (`cd ~/Downloads/HiyaCFW-Helper` or whatever).
+* Run `sudo ./HiyaCFW_Helper.py`.
+
+### _MacOS:_
+* Open a Terminal (⌘+Space and write _terminal_).
+* _cd_ to the helper's folder (`cd ~/Downloads/HiyaCFW-Helper` or whatever).
+* Run `./HiyaCFW_Helper.py`.
 
 Thanks to:
 * jerbear64 and LmN for the original script.
