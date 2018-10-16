@@ -18,7 +18,7 @@ from json import loads as jsonify
 from subprocess import Popen, PIPE
 from struct import unpack_from
 from re import search
-from shutil import move, rmtree
+from shutil import move, rmtree, copyfile
 from distutils.dir_util import copy_tree
 
 libdir.append('pyaes')
@@ -251,7 +251,7 @@ class Application(Frame):
                             Thread(target=self.decrypt_nand).start()
 
                         else:
-                            #Thread(target=self.remove_footer).start()
+                            Thread(target=self.remove_footer).start()
                             pass
 
                     else:
@@ -812,20 +812,26 @@ class Application(Frame):
         while len(self.files) > 0:
             remove(self.files.pop())
 
+        # Get logged user in Linux
+        if sysname == 'Linux':
+            from os import getlogin
+
+            ug = getlogin()
+
         if (self.nand_mode):
-            file = self.console_id.get() + self.suffix + '.img'
+            file = self.console_id.get() + self.suffix + '.bin'
 
             rename(self.console_id.get() + '.img', file)
+
+            # Change owner of the file in Linux
+            if sysname == 'Linux':
+                Popen([ 'chown', '-R', ug + ':' + ug, file ]).wait()
 
             self.log.write('\nDone!\nModified NAND stored as\n' + file)
             return
 
         # Change owner of the out folder in Linux
         if sysname == 'Linux':
-            from os import getlogin
-
-            ug = getlogin()
-
             Popen([ 'chown', '-R', ug + ':' + ug, 'out' ]).wait()
 
         self.log.write("\nDone!\nMove the contents of the out folder to your DSi's\nSD card")
@@ -1017,6 +1023,42 @@ class Application(Frame):
 
         except OSError:
             self.log.write('ERROR: Could not execute ' + exe)
+
+
+    ################################################################################################
+    def remove_footer(self):
+        self.log.write('\nRemoving No$GBA footer...')
+
+        file = self.console_id.get() + '-no-footer.bin'
+
+        try:
+            copyfile(self.nand_file.get(), file)
+
+            # Back-up footer info
+            with open(self.console_id.get() + '-info.txt', 'wb') as f:
+                f.write('eMMC CID: ' + self.cid.get() + '\r\n')
+                f.write('Console ID: ' + self.console_id.get() + '\r\n')
+
+            with open(file, 'r+b') as f:
+                # Go to the No$GBA footer offset
+                f.seek(-64, 2)
+                # Remove footer
+                f.truncate()
+
+            # Change owner of the file in Linux
+            if sysname == 'Linux':
+                from os import getlogin
+
+                ug = getlogin()
+
+                Popen([ 'chown', '-R', ug + ':' + ug, file ]).wait()
+
+            self.log.write('\nDone!\nModified NAND stored as\n' + file +
+                '\nStored footer info in ' + self.console_id.get() + '-info.txt')
+
+        except IOError:
+            self.log.write('ERROR: Could not open the file ' +
+                path.basename(self.nand_file.get()))
 
 
 ####################################################################################################
