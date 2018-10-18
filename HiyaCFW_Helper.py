@@ -142,10 +142,6 @@ class Application(Frame):
 
         f3.pack(pady=(10, 20))
 
-        x = LabelFrame(self, text='NAND file with No$GBA footer', padx=10, pady=10)
-        Button(x, text='Button')
-        x.pack(fill=X)
-
         self.folders = []
         self.files = []
 
@@ -184,6 +180,35 @@ class Application(Frame):
 
     ################################################################################################
     def hiya(self):
+        # If adding a No$GBA footer, check if CID and ConsoleID values are OK
+        if self.nand_mode and self.nand_operation.get() == 2:
+            cid = self.cid.get()
+            console_id = self.console_id.get()
+
+            # Check lengths
+            if len(cid) != 32:
+                showerror('Error', 'Bad eMMC CID')
+                return
+
+            elif len(console_id) != 16:
+                showerror('Error', 'Bad Console ID')
+                return
+
+            # Parse strings to hex
+            try:
+                cid = cid.decode('hex')
+
+            except TypeError:
+                showerror('Error', 'Bad eMMC CID')
+                return
+
+            try:
+                console_id = bytearray(reversed(console_id.decode('hex')))
+
+            except TypeError:
+                showerror('Error', 'Bad Console ID')
+                return
+
         dialog = Toplevel(self)
         # Open as dialog (parent disabled)
         dialog.grab_set()
@@ -215,8 +240,7 @@ class Application(Frame):
 
         # Check if we'll be adding a No$GBA footer
         if self.nand_mode and self.nand_operation.get() == 2:
-            #Thread(target=self.add_footer).start()
-            pass
+            Thread(target=self.add_footer, args=(cid, console_id)).start()
 
         else:
             Thread(target=self.check_nand).start()
@@ -1055,6 +1079,44 @@ class Application(Frame):
 
             self.log.write('\nDone!\nModified NAND stored as\n' + file +
                 '\nStored footer info in ' + self.console_id.get() + '-info.txt')
+
+        except IOError:
+            self.log.write('ERROR: Could not open the file ' +
+                path.basename(self.nand_file.get()))
+
+
+    ################################################################################################
+    def add_footer(self, cid, console_id):
+        self.log.write('Adding No$GBA footer...')
+
+        file = self.console_id.get() + '-footer.bin'
+
+        try:
+            copyfile(self.nand_file.get(), file)
+
+            with open(file, 'r+b') as f:
+                # Go to the No$GBA footer offset
+                f.seek(-64, 2)
+                # Read the footer's header :-)
+                bstr = f.read(0x10)
+
+                # Check if it already has a footer
+                if bstr == b'DSi eMMC CID/CPU':
+                    self.log.write('ERROR: File already has a No$GBA footer')
+                    f.close()
+                    remove(file)
+                    return;
+
+                # Go to the end of file
+                f.seek(0, 2)
+                # Write footer
+                f.write(b'DSi eMMC CID/CPU')
+                f.write(cid)
+                f.write(console_id)
+                f.write('\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                    '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+
+            self.log.write('\nDone!\nModified NAND stored as\n' + file)
 
         except IOError:
             self.log.write('ERROR: Could not open the file ' +
