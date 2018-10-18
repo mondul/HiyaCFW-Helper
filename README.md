@@ -2,6 +2,8 @@
 
 In order to make things easier for me, and because I don't have Windows, I edited the HiyaCFW Helper Python script by jerbear64 and LmN in order to add a graphical user interface to it.
 
+![Screenshot](https://image.ibb.co/hhzKRL/Screen-Shot-2018-10-18-at-16-30-18.png)
+
 ## What it does:
 * Allows you to browse for your NAND backup, no need to place it at the same folder.
 * Downloads the latest HiyaCFW release and decompress it.
