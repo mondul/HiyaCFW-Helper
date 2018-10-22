@@ -925,17 +925,22 @@ class Application(Frame):
         # Autodetect console region
         base = self.mounted if self.nand_mode else 'out'
 
-        for app in listdir(path.join(base, 'title', '00030017')):
-            for folder in listdir(path.join(base, 'title', '00030017', app)):
-                if folder == 'data':
-                    try:
-                        self.log.write('- Detected ' + REGION_CODES[app] + ' console NAND dump')
-                        self.launcher_region = REGION_CODES[app]
-                        return app
+        try:
+            for app in listdir(path.join(base, 'title', '00030017')):
+                for folder in listdir(path.join(base, 'title', '00030017', app)):
+                    if folder == 'data':
+                        try:
+                            self.log.write('- Detected ' + REGION_CODES[app] + ' console NAND dump')
+                            self.launcher_region = REGION_CODES[app]
+                            return app
 
-                    except KeyError:
-                        self.log.write('ERROR: Unsupported console region')
-                        return False
+                        except KeyError:
+                            self.log.write('ERROR: Unsupported console region')
+                            return False
+
+        except OSError as e:
+            self.log.write('ERROR: ' + e.strerror + ': ' + e.filename)
+            return False
 
 
     ################################################################################################
