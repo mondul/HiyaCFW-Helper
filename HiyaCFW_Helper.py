@@ -1131,7 +1131,7 @@ root = Tk()
 
 if sysname == 'Windows':
     from ctypes import windll
-    from os import environ
+    from _winreg import OpenKey, QueryValueEx, HKEY_LOCAL_MACHINE
 
     if windll.shell32.IsUserAnAdmin() == 0:
         root.withdraw()
@@ -1139,20 +1139,19 @@ if sysname == 'Windows':
         root.destroy()
         exit(1)
 
-    # Search for OSFMount in the Program Files folder
+    # Search for OSFMount in the Windows registry
     try:
-        # This is a 32-bit script so get the 64-bit environment variable
-        osfmount = environ['PROGRAMW6432']
+        with OpenKey(HKEY_LOCAL_MACHINE,
+            'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\OSFMount_is1') as hkey:
 
-    except KeyError:
-        osfmount = environ['PROGRAMFILES']
+            osfmount = path.join(QueryValueEx(hkey, 'InstallLocation')[0], 'OSFMount.com')
 
-    osfmount = path.join(osfmount, 'OSFMount', 'OSFMount.com')
+            if not path.exists(osfmount):
+                raise WindowsError
 
-    if not path.exists(osfmount):
+    except WindowsError:
         root.withdraw()
-        showerror('Error', ('This script needs OSFMount to run. '
-            'Please install it at the default location.'))
+        showerror('Error', 'This script needs OSFMount to run. Please install it.')
         root.destroy()
         exit(1)
 
