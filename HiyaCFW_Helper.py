@@ -334,6 +334,24 @@ class Application(Frame):
             ret_val = proc.wait()
 
             if ret_val == 0:
+                # Hash arm7.bin
+                sha1_hash = sha1()
+
+                with open('arm7.bin', 'rb') as f:
+                    sha1_hash.update(f.read())
+
+                self.log.write('- arm7.bin SHA1:\n  ' +
+                    hexlify(sha1_hash.digest()).upper())
+
+                # Hash arm9.bin
+                sha1_hash = sha1()
+
+                with open('arm9.bin', 'rb') as f:
+                    sha1_hash.update(f.read())
+
+                self.log.write('- arm9.bin SHA1:\n  ' +
+                    hexlify(sha1_hash.digest()).upper())
+
                 Thread(target=self.patch_bios).start()
 
             else:
@@ -356,6 +374,25 @@ class Application(Frame):
 
             self.files.append('arm7.bin')
             self.files.append('arm9.bin')
+
+            # Hash arm7.bin
+            sha1_hash = sha1()
+
+            with open('arm7.bin', 'rb') as f:
+                sha1_hash.update(f.read())
+
+            self.log.write('- Patched arm7.bin SHA1:\n  ' +
+                hexlify(sha1_hash.digest()).upper())
+
+            # Hash arm9.bin
+            sha1_hash = sha1()
+
+            with open('arm9.bin', 'rb') as f:
+                sha1_hash.update(f.read())
+
+            self.log.write('- Patched arm9.bin SHA1:\n  ' +
+                hexlify(sha1_hash.digest()).upper())
+
             Thread(target=self.arm9_prepend).start()
 
         except IOError:
@@ -380,6 +417,15 @@ class Application(Frame):
 
                 f.write(data)
 
+            # Hash arm9.bin
+            sha1_hash = sha1()
+
+            with open('arm9.bin', 'rb') as f:
+                sha1_hash.update(f.read())
+
+            self.log.write('- Prepended arm9.bin SHA1:\n  ' +
+                hexlify(sha1_hash.digest()).upper())
+
             Thread(target=self.make_bootloader).start()
 
         except IOError:
@@ -401,6 +447,15 @@ class Application(Frame):
             ret_val = proc.wait()
 
             if ret_val == 0:
+                # Hash bootloader.nds
+                sha1_hash = sha1()
+
+                with open('bootloader.nds', 'rb') as f:
+                    sha1_hash.update(f.read())
+
+                self.log.write('- bootloader.nds SHA1:\n  ' +
+                    hexlify(sha1_hash.digest()).upper())
+
                 Thread(target=self.decrypt_nand).start()
 
             else:
@@ -677,7 +732,7 @@ class Application(Frame):
             content_offset += 8
 
             content_hash = unpack_from('20s', tmd_raw, content_offset)[0]
-            content_offset += 20
+            self.log.write('  - Expected launcher SHA1:\n    ' + hexlify(content_hash).upper())
 
             # Download content
             self.log.write('- Downloading encrypted content...')
@@ -728,6 +783,15 @@ class Application(Frame):
             ret_val = proc.wait()
 
             if ret_val == 0:
+                # Hash 00000002.app
+                sha1_hash = sha1()
+
+                with open(self.launcher_file, 'rb') as f:
+                    sha1_hash.update(f.read())
+
+                self.log.write('- Decrypted launcher SHA1:\n  ' +
+                    hexlify(sha1_hash.digest()).upper())
+
                 Thread(target=self.patch_launcher).start()
 
             else:
@@ -746,6 +810,15 @@ class Application(Frame):
 
         try:
             self.patcher(patch, self.launcher_file)
+
+            # Hash 00000002.app
+            sha1_hash = sha1()
+
+            with open(self.launcher_file, 'rb') as f:
+                sha1_hash.update(f.read())
+
+            self.log.write('- Patched launcher SHA1:\n  ' +
+                hexlify(sha1_hash.digest()).upper())
 
             Thread(target=self.get_latest_twilight if self.twilight.get() == 1
                 else self.clean).start()
