@@ -658,25 +658,33 @@ class Application(Frame):
     def install_hiyacfw(self):
         self.log.write('\nCopying HiyaCFW files...')
 
-        copy_tree('for SDNAND SD card', 'out', update=1)
-        move('bootloader.nds', path.join('out', 'hiya', 'bootloader.nds'))
-
-        Thread(target=self.get_launcher).start()
-
-
-    ################################################################################################
-    def get_launcher(self):
-        self.log.write('\nDownloading launcher...')
-
-        HEADER = { 'User-Agent': 'Opera/9.50 (Nintendo; Opera/154; U; Nintendo DS; en)' }
-
-        C_K = '\xAF\x1B\xF5\x16\xA8\x07\xD2\x1A\xEAE\x98O\x04t(a'
-
         app = self.detect_region()
 
         # Stop if no supported region was found
         if not app:
             return
+
+        # Check if unlaunch was installed on the NAND dump
+        if path.getsize(path.join('out', 'title', '00030017', app, 'content', 'title.tmd')) > 520:
+            self.log.write('- WARNING: Unlaunch installed on the NAND dump')
+
+            # Set files as read-write
+            for file in listdir(path.join('out', 'title', '00030017', app, 'content')):
+                chmod(path.join('out', 'title', '00030017', app, 'content', file), 438)
+
+        copy_tree('for SDNAND SD card', 'out', update=1)
+        move('bootloader.nds', path.join('out', 'hiya', 'bootloader.nds'))
+
+        Thread(target=self.get_launcher, args=(app,)).start()
+
+
+    ################################################################################################
+    def get_launcher(self, app):
+        self.log.write('\nDownloading launcher...')
+
+        HEADER = { 'User-Agent': 'Opera/9.50 (Nintendo; Opera/154; U; Nintendo DS; en)' }
+
+        C_K = '\xAF\x1B\xF5\x16\xA8\x07\xD2\x1A\xEAE\x98O\x04t(a'
 
         title_url = 'http://nus.cdn.t.shop.nintendowifi.net/ccs/download/00030017' + app + '/'
 
