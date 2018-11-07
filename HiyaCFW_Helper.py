@@ -7,7 +7,7 @@ from tkMessageBox import showerror, askokcancel, WARNING
 from tkFileDialog import askopenfilename
 from platform import system
 from os import path, remove, chmod, listdir, rename
-from sys import exit, path as libdir
+from sys import exit
 from locale import getpreferredencoding
 from threading import Thread
 from Queue import Queue, Empty
@@ -21,10 +21,6 @@ from struct import unpack_from
 from re import search
 from shutil import move, rmtree, copyfile
 from distutils.dir_util import copy_tree
-
-libdir.append('pyaes')
-
-from pyaes import AESModeOfOperationCBC, Decrypter
 
 
 ####################################################################################################
@@ -682,102 +678,43 @@ class Application(Frame):
     def get_launcher(self, app):
         self.log.write('\nDownloading launcher...')
 
-        HEADER = { 'User-Agent': 'Opera/9.50 (Nintendo; Opera/154; U; Nintendo DS; en)' }
-
-        C_K = '\xAF\x1B\xF5\x16\xA8\x07\xD2\x1A\xEAE\x98O\x04t(a'
-
-        title_url = 'http://nus.cdn.t.shop.nintendowifi.net/ccs/download/00030017' + app + '/'
-
-        # Download ticket to memory
-        self.log.write('- Downloading ticket...')
+        # Download launcher from the repo
         try:
-            conn = urlopen(Request(title_url + 'cetk', None, HEADER));
-            ticket_raw = conn.read()
-            conn.close()
+            filename = urlretrieve('https://raw.githubusercontent.com/mondul/'
+                'HiyaCFW-Helper/master/launchers/' + self.launcher_region)[0]
 
-        except URLError:
-            self.log.write('ERROR: Could not download ticket')
-            return
+            exe = path.join(sysname, '7za')
 
-        # Load encrypted title key
-        encrypted_title_key = unpack_from('16s', ticket_raw, 0x1BF)[0]
+            proc = Popen([ exe, 'x', '-bso0', '-y', '-p' + app, '-o' +
+                path.join('out', 'title', '00030017', app, 'content'), filename ])
 
-        # Decrypt it
-        iv = unpack_from('8s', ticket_raw, 0x1DC)[0].ljust(16, '\0')
+            ret_val = proc.wait()
 
-        title_key = AESModeOfOperationCBC(C_K, iv).decrypt(encrypted_title_key)
-
-        # Download TMD to memory
-        self.log.write('- Downloading TMD...')
-        try:
-            conn = urlopen(Request(title_url + 'tmd.512', None, HEADER))
-            tmd_raw = conn.read()
-            conn.close()
-
-        except URLError:
-            self.log.write('ERROR: Could not download TMD')
-            return
-
-        # Load number of contents
-        num_contents = unpack_from('>H', tmd_raw, 0x1DE)[0]
-
-        # Read and download contents, decrypt and save them
-        content_offset = 0x1E4
-
-        for i in range(num_contents):
-            content_id = hexlify(unpack_from('4s', tmd_raw, content_offset)[0])
-
-            # Check if it is the content we are looking for
-            if content_id != '00000002':
-                content_offset += 36
-                continue
-
-            content_offset += 4
-
-            iv = unpack_from('2s', tmd_raw, content_offset)[0].ljust(16, '\0')
-            content_offset += 4
-
-            content_size = unpack_from('>Q', tmd_raw, content_offset)[0]
-            content_offset += 8
-
-            content_hash = unpack_from('20s', tmd_raw, content_offset)[0]
-            self.log.write('  - Expected launcher SHA1:\n    ' + hexlify(content_hash).upper())
-
-            # Download content
-            self.log.write('- Downloading encrypted content...')
-            try:
-                conn = urlopen(Request(title_url + content_id, None, HEADER))
-                content_raw = conn.read()
-                conn.close()
-
-            except URLError:
-                self.log.write('ERROR: Could not download ' + content_id)
-                return
-
-            self.log.write('- Decrypting content...')
-            decrypted_content = Decrypter(AESModeOfOperationCBC(title_key,
-                iv)).feed(content_raw).ljust(content_size, '\xFF')
-
-            sha1_hash = sha1()
-            sha1_hash.update(decrypted_content)
-
-            if sha1_hash.digest() == content_hash:
-                self.log.write('- Saving 00000002.app...')
+            if ret_val == 0:
+                self.files.append(filename)
 
                 self.launcher_file = path.join('out', 'title', '00030017', app, 'content',
                     '00000002.app')
 
-                with open(self.launcher_file, 'wb') as f:
-                    f.write(decrypted_content)
+                # Hash 00000002.app
+                sha1_hash = sha1()
+
+                with open(self.launcher_file, 'rb') as f:
+                    sha1_hash.update(f.read())
+
+                self.log.write('- Downloaded launcher SHA1:\n  ' +
+                    hexlify(sha1_hash.digest()).upper())
 
                 Thread(target=self.decrypt_launcher).start()
 
             else:
-                self.log.write('ERROR: Hash did not match, file not saved')
+                self.log.write('ERROR: Extractor failed')
 
-            return
+        except IOError:
+            self.log.write('ERROR: Could not download ' + self.launcher_region + ' launcher')
 
-        self.log.write('ERROR: No valid content found')
+        except OSError:
+            self.log.write('ERROR: Could not execute ' + exe)
 
 
     ################################################################################################
