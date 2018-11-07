@@ -8,6 +8,7 @@ from tkFileDialog import askopenfilename
 from platform import system
 from os import path, remove, chmod, listdir, rename
 from sys import exit, path as libdir
+from locale import getpreferredencoding
 from threading import Thread
 from Queue import Queue, Empty
 from binascii import hexlify
@@ -172,7 +173,7 @@ class Application(Frame):
     ################################################################################################
     def choose_nand(self):
         name = askopenfilename(filetypes=( ( 'nand.bin', '*.bin' ), ( 'DSi-1.mmc', '*.mmc' ) ))
-        self.nand_file.set(name)
+        self.nand_file.set(name.encode(getpreferredencoding()))
 
         self.nand_button['state'] = (NORMAL if self.nand_file.get() != '' else DISABLED)
         self.start_button['state'] = (NORMAL if self.nand_file.get() != '' else DISABLED)
