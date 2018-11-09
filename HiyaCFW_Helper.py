@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 from Tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutton, Radiobutton,
-    Label, Toplevel, Scrollbar, Text, StringVar, IntVar, LEFT, RIGHT, W, X, Y, DISABLED, NORMAL,
-    SUNKEN, END)
+    Label, Toplevel, Scrollbar, Text, StringVar, IntVar, RIGHT, W, X, Y, DISABLED, NORMAL, SUNKEN,
+    END)
 from tkMessageBox import showerror, askokcancel, WARNING
 from tkFileDialog import askopenfilename
 from platform import system
@@ -13,9 +13,9 @@ from threading import Thread
 from Queue import Queue, Empty
 from binascii import hexlify
 from hashlib import sha1
-from urllib2 import urlopen, URLError, Request
+from urllib2 import urlopen, URLError
 from urllib import urlretrieve
-from json import loads as jsonify
+from json import load as jsonify
 from subprocess import Popen, PIPE
 from struct import unpack_from
 from re import search
@@ -292,7 +292,7 @@ class Application(Frame):
 
         try:
             conn = urlopen('https://api.github.com/repos/RocketRobz/hiyaCFW/releases/latest')
-            latest = jsonify(conn.read())
+            latest = jsonify(conn)
             conn.close()
 
             filename = urlretrieve(latest['assets'][0]['browser_download_url'])[0]
@@ -602,7 +602,7 @@ class Application(Frame):
         self.log.write('\nExtracting files from NAND...')
 
         rmtree('out', ignore_errors=True)
-        copy_tree(self.mounted, 'out')
+        copy_tree(self.mounted, 'out', preserve_mode=0, preserve_times=0)
 
         Thread(target=self.unmount_nand).start()
 
@@ -663,10 +663,6 @@ class Application(Frame):
         # Check if unlaunch was installed on the NAND dump
         if path.getsize(path.join('out', 'title', '00030017', app, 'content', 'title.tmd')) > 520:
             self.log.write('- WARNING: Unlaunch installed on the NAND dump')
-
-            # Set files as read-write
-            for file in listdir(path.join('out', 'title', '00030017', app, 'content')):
-                chmod(path.join('out', 'title', '00030017', app, 'content', file), 438)
 
         copy_tree('for SDNAND SD card', 'out', update=1)
         move('bootloader.nds', path.join('out', 'hiya', 'bootloader.nds'))
@@ -783,7 +779,7 @@ class Application(Frame):
 
         try:
             conn = urlopen('https://api.github.com/repos/RocketRobz/TWiLightMenu/releases/latest')
-            latest = jsonify(conn.read())
+            latest = jsonify(conn)
             conn.close()
 
             filename = urlretrieve(latest['assets'][0]['browser_download_url'])[0]
