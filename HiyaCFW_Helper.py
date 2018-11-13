@@ -942,8 +942,8 @@ class Application(Frame):
 
         try:
             for app in listdir(path.join(base, 'title', '00030017')):
-                for folder in listdir(path.join(base, 'title', '00030017', app)):
-                    if folder == 'data':
+                for file in listdir(path.join(base, 'title', '00030017', app, 'content')):
+                    if file == '00000002.app':
                         try:
                             self.log.write('- Detected ' + REGION_CODES[app] + ' console NAND dump')
                             self.launcher_region = REGION_CODES[app]
@@ -953,9 +953,12 @@ class Application(Frame):
                             self.log.write('ERROR: Unsupported console region')
                             return False
 
+            self.log.write('ERROR: Could not detect console region')
+
         except OSError as e:
             self.log.write('ERROR: ' + e.strerror + ': ' + e.filename)
-            return False
+
+        return False
 
 
     ################################################################################################
