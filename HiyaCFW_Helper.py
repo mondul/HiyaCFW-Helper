@@ -1209,7 +1209,7 @@ elif sysname == 'Linux':
         root.destroy()
         exit(1)
 
-root.title('HiyaCFW Helper')
+root.title('HiyaCFW Helper v2.9.5')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window
