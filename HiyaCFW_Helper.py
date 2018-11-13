@@ -288,14 +288,21 @@ class Application(Frame):
 
     ################################################################################################
     def get_latest_hiyacfw(self):
-        self.log.write('\nDownloading and extracting latest HiyaCFW release...')
+        # Try to use already downloaded HiyaCFW archive
+        filename = 'HiyaCFW.7z'
 
         try:
-            conn = urlopen('https://api.github.com/repos/RocketRobz/hiyaCFW/releases/latest')
-            latest = jsonify(conn)
-            conn.close()
+            if path.isfile(filename):
+                self.log.write('\nExtracting HiyaCFW archive...')
 
-            filename = urlretrieve(latest['assets'][0]['browser_download_url'])[0]
+            else:
+                self.log.write('\nDownloading and extracting latest HiyaCFW release...')
+
+                conn = urlopen('https://api.github.com/repos/RocketRobz/hiyaCFW/releases/latest')
+                latest = jsonify(conn)
+                conn.close()
+
+                urlretrieve(latest['assets'][0]['browser_download_url'], filename)
 
             exe = path.join(sysname, '7za')
 
@@ -306,7 +313,6 @@ class Application(Frame):
             if ret_val == 0:
                 self.folders.append('for PC')
                 self.folders.append('for SDNAND SD card')
-                self.files.append(filename)
                 Thread(target=self.extract_bios).start()
 
             else:
@@ -776,15 +782,30 @@ class Application(Frame):
 
     ################################################################################################
     def get_latest_twilight(self):
-        self.log.write('\nDownloading and extracting latest')
-        self.log.write('TWiLight Menu++ release...')
+        filename = False
+
+        # Release archives names
+        names = ( 'TWiLightMenu.7z', 'DSiMenuPP.7z', 'DSiMenuPlusPlus.7z', 'SRLoader.7z' )
+
+        for name in names:
+            if (path.isfile(name)):
+                filename = name
+                break
 
         try:
-            conn = urlopen('https://api.github.com/repos/RocketRobz/TWiLightMenu/releases/latest')
-            latest = jsonify(conn)
-            conn.close()
+            if filename:
+                self.log.write('\nExtracting ' + filename[:-3] + ' archive...')
 
-            filename = urlretrieve(latest['assets'][0]['browser_download_url'])[0]
+            else:
+                self.log.write('\nDownloading and extracting latest')
+                self.log.write('TWiLight Menu++ release...')
+
+                conn = urlopen('https://api.github.com/repos/RocketRobz/TWiLightMenu/releases/latest')
+                latest = jsonify(conn)
+                conn.close()
+
+                filename = names[0]
+                urlretrieve(latest['assets'][0]['browser_download_url'], filename)
 
             exe = path.join(sysname, '7za')
 
@@ -798,8 +819,7 @@ class Application(Frame):
                 self.folders.append('Autoboot for HiyaCFW')
                 self.folders.append('CFW - SDNAND root')
                 self.folders.append('DSiWare (' + self.launcher_region + ')')
-                self.files.append(filename)
-                Thread(target=self.install_twilight).start()
+                Thread(target=self.install_twilight, args=(filename[:-3],)).start()
 
             else:
                 self.log.write('ERROR: Extractor failed')
@@ -812,8 +832,8 @@ class Application(Frame):
 
 
     ################################################################################################
-    def install_twilight(self):
-        self.log.write('\nCopying TWiLight Menu++ files...')
+    def install_twilight(self, name):
+        self.log.write('\nCopying ' + name + ' files...')
 
         copy_tree('CFW - SDNAND root', 'out', update=1)
         move('_nds', path.join('out', '_nds'))
