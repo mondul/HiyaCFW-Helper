@@ -943,7 +943,7 @@ class Application(Frame):
         try:
             for app in listdir(path.join(base, 'title', '00030017')):
                 for file in listdir(path.join(base, 'title', '00030017', app, 'content')):
-                    if file == '00000002.app':
+                    if search(r'\.app\Z', file) != None:
                         try:
                             self.log.write('- Detected ' + REGION_CODES[app] + ' console NAND dump')
                             self.launcher_region = REGION_CODES[app]
