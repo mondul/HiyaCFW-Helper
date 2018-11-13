@@ -20,7 +20,7 @@ from subprocess import Popen, PIPE
 from struct import unpack_from
 from re import search
 from shutil import move, rmtree, copyfile
-from distutils.dir_util import copy_tree
+from distutils.dir_util import copy_tree, _path_created
 
 
 ####################################################################################################
@@ -602,6 +602,8 @@ class Application(Frame):
         self.log.write('\nExtracting files from NAND...')
 
         rmtree('out', ignore_errors=True)
+        # Reset copied files cache
+        _path_created.clear()
         copy_tree(self.mounted, 'out', preserve_mode=0, preserve_times=0)
 
         Thread(target=self.unmount_nand).start()
