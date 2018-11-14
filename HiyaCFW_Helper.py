@@ -877,7 +877,12 @@ class Application(Frame):
         if sysname == 'Linux':
             from os import getlogin
 
-            ug = getlogin()
+            # Workaround for some Linux systems where this function does not work
+            try:
+                ug = getlogin()
+
+            except OSError:
+                ug = 'root'
 
         if (self.nand_mode):
             file = self.console_id.get() + self.suffix + '.bin'
