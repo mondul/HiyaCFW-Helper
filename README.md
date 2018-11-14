@@ -6,15 +6,14 @@ In order to make things easier for me, and because I don't have Windows, I edite
 
 ## What it does:
 * Allows you to browse for your NAND backup, no need to place it at the same folder.
+* Shows the option to choose the output destination, which should be a (preferably empty) FAT formatted SD card or any other folder.
 * Downloads the latest HiyaCFW release and decompress it.
 * Autodetects the console region from the NAND dump, downloads and decrypts its v512 launcher.
 * Creates the patched _00000002.app_ and _bootloader.nds_ for the custom firmware.
 * Uses your platform's twltool (binaries for Linux and MacOS included) to decrypt the NAND.
-* Mounts the decrypted NAND (OSFMount required for Windows) and extracts it to a folder named "out".
-* Installs the HiyaCFW and the patched files on the "out" folder.
-* (Optional) installs the latest release of TWiLightMenu++ on the "out" folder.
-
-All that you have to do then is copy the contents of the "out" folder onto your (preferably empty) SD card.
+* Mounts the decrypted NAND (OSFMount required for Windows) and extracts it to the chosen output destination.
+* Installs the HiyaCFW and the patched files on the chosen output destination.
+* (Optional) installs the latest release of TWiLightMenu++ (or any of the previous releases of it or DSiMenu++ or SRLoader placed at the same folder as the helper) on the chosen output destination.
 
 ### _NAND mode:_
 Clicking on the integrated circuit button will give you a NAND mode, where you can uninstall unlaunch or install its v1.4 stable release, remove the No$GBA footer or add it. Recommended only for those with a hardmod.
@@ -35,8 +34,7 @@ Clicking on the integrated circuit button will give you a NAND mode, where you c
 * 7za binaries for Windows, Linux and MacOS. It's used to decompress the HiyaCFW latest release as [@RocketRobz](https://github.com/RocketRobz) uploaded it as a 7z archive. Compiled from the [kornelski's GitHub repo](https://github.com/kornelski/7z).
 * twltool binaries for Windows, Linux and MacOS. Compiled from the [WinterMute's GitHub repo](https://github.com/WinterMute/twltool).
 * NDS bootloader creator binaries for Linux and MacOS (based off devkitPro's ndstool v1.27). Compiled from [my GitHub repo](https://github.com/mondul/NDS-Bootloader-Creator). For Windows the ndstool included with HiyaCFW is used.
-* In order to decrypt the launcher, the pyaes library by ricmoo, taken from [his GitHub repo](https://github.com/ricmoo/pyaes), was used.
-* fatattr binary for Linux. It's used for setting FAT attributes in NAND mode. Compiled from the [Terseus' GitHub repo](https://github.com/Terseus/fatattr).
+* fatattr binary for Linux. It's used for setting FAT attributes when writing to the FAT formatted SD card or in NAND mode. Compiled from the [Terseus' GitHub repo](https://github.com/Terseus/fatattr).
 
 ## How to use it:
 ### _Windows:_
