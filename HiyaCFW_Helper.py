@@ -647,7 +647,7 @@ class Application(Frame):
 
 
     ################################################################################################
-    def unmount_nand(self, err):
+    def unmount_nand(self, err=False):
         self.log.write('\nUnmounting NAND...')
 
         try:
@@ -1227,7 +1227,7 @@ elif sysname == 'Linux':
         root.destroy()
         exit(1)
 
-root.title('HiyaCFW Helper v2.9.9')
+root.title('HiyaCFW Helper v2.9.9.1')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window
