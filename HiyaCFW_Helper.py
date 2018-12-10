@@ -183,6 +183,10 @@ class Application(Frame):
                 'boot errors please assure it is empty before continuing.')
             self.sd_path = askdirectory()
 
+            # Exit if no path was selected
+            if self.sd_path == '':
+                return
+
         # If adding a No$GBA footer, check if CID and ConsoleID values are OK
         elif self.nand_operation.get() == 2:
             cid = self.cid.get()
