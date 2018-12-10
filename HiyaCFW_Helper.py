@@ -864,7 +864,7 @@ class Application(Frame):
                     if title.endswith('.app'):
                         with open(path.join(self.sd_path, 'roms', 'dsiware', app + '.launcharg'),
                             'w') as launcharg:
-                            launcharg.write('sd:/title/00030004/' + app + '/content/' + title)
+                            launcharg.write('sd:/title/00030004/' + app + '/')
 
             except:
                 pass
@@ -1231,7 +1231,7 @@ elif sysname == 'Linux':
         root.destroy()
         exit(1)
 
-root.title('HiyaCFW Helper v2.9.9.1')
+root.title('HiyaCFW Helper v2.9.9.2')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window
