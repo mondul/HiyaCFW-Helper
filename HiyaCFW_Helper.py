@@ -334,6 +334,15 @@ class Application(Frame):
 
         except (URLError, IOError) as e:
             self.log.write('ERROR: Could not get HiyaCFW')
+            if self.twilight.get():
+                self.log.write('\nPlease download the latest versions of HiyaCFW and\nTWiLight Menu++ from:')
+                self.log.write('\nhttps://github.com/RocketRobz/hiyaCFW/releases')
+                self.log.write('https://github.com/RocketRobz/TWiLightMenu/releases')
+                self.log.write('\nThen place the files in this folder.')
+            else:
+                self.log.write('\nPlease download the latest version of HiyaCFW from:')
+                self.log.write('\nhttps://github.com/RocketRobz/hiyaCFW/releases')
+                self.log.write('\nThen place the file in this folder.')
 
         except OSError:
             self.log.write('ERROR: Could not execute ' + exe)
@@ -497,7 +506,7 @@ class Application(Frame):
 
         try:
             proc = Popen([ exe, 'nandcrypt', '--in', self.nand_file.get(), '--out',
-            	self.console_id.get() + '.img' ])
+                self.console_id.get() + '.img' ])
 
             ret_val = proc.wait()
 
@@ -765,6 +774,19 @@ class Application(Frame):
     ################################################################################################
     def install_hiyacfw(self, launcher_path):
         self.log.write('\nCopying HiyaCFW files...')
+
+        try:
+            self.log.write('- Deleting stock launcher title.tmd...')
+            if self.launcher_region == 'USA':
+                remove(path.join(self.sd_path, 'title', '00030017', '484e4145', 'content', 'title.tmd'))
+            if self.launcher_region == 'JAP':
+                remove(path.join(self.sd_path, 'title', '00030017', '484e414a', 'content', 'title.tmd'))
+            if self.launcher_region == 'EUR':
+                remove(path.join(self.sd_path, 'title', '00030017', '484e4150', 'content', 'title.tmd'))
+            if self.launcher_region == 'AUS':
+                remove(path.join(self.sd_path, 'title', '00030017', '484e4155', 'content', 'title.tmd'))
+        except:
+            pass
 
         copy_tree('for SDNAND SD card', self.sd_path, update=1)
         move('bootloader.nds', path.join(self.sd_path, 'hiya', 'bootloader.nds'))
