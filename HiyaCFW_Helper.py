@@ -298,21 +298,16 @@ class Application(Frame):
 
     ################################################################################################
     def get_latest_hiyacfw(self):
-        # Try to use already downloaded HiyaCFW archive
         filename = 'HiyaCFW.7z'
 
         try:
-            if path.isfile(filename):
-                self.log.write('\nPreparing HiyaCFW...')
+            self.log.write('\nDownloading latest HiyaCFW release...')
 
-            else:
-                self.log.write('\nDownloading latest HiyaCFW release...')
+            conn = urlopen('https://api.github.com/repos/RocketRobz/hiyaCFW/releases/latest')
+            latest = jsonify(conn)
+            conn.close()
 
-                conn = urlopen('https://api.github.com/repos/RocketRobz/hiyaCFW/releases/latest')
-                latest = jsonify(conn)
-                conn.close()
-
-                urlretrieve(latest['assets'][0]['browser_download_url'], filename)
+            urlretrieve(latest['assets'][0]['browser_download_url'], filename)
 
             self.log.write('- Extracting HiyaCFW archive...')
 
@@ -323,6 +318,7 @@ class Application(Frame):
             ret_val = proc.wait()
 
             if ret_val == 0:
+                self.files.append(filename)
                 self.folders.append('for PC')
                 self.folders.append('for SDNAND SD card')
                 # Got to decrypt NAND if bootloader.nds is present
@@ -721,20 +717,19 @@ class Application(Frame):
             return
 
         # Check if unlaunch was installed on the NAND dump
-        if path.getsize(path.join(self.sd_path, 'title', '00030017', app, 'content',
-            'title.tmd')) > 520:
+        tmd = path.join(self.sd_path, 'title', '00030017', app, 'content', 'title.tmd')
+
+        if path.getsize(tmd) > 520:
             self.log.write('- WARNING: Unlaunch installed on the NAND dump')
 
-        # Try to use already downloaded launcher
+        # Delete title.tmd in case it does not get overwritten
+        remove(tmd)
+
         try:
-            if path.isfile(self.launcher_region):
-                self.log.write('\nPreparing ' + self.launcher_region + ' launcher...')
+            self.log.write('\nDownloading ' + self.launcher_region + ' launcher...')
 
-            else:
-                self.log.write('\nDownloading ' + self.launcher_region + ' launcher...')
-
-                urlretrieve('https://raw.githubusercontent.com/mondul/HiyaCFW-Helper/master/'
-                    'launchers/' + self.launcher_region, self.launcher_region)
+            urlretrieve('https://raw.githubusercontent.com/mondul/HiyaCFW-Helper/master/'
+                'launchers/' + self.launcher_region, self.launcher_region)
 
             self.log.write('- Decrypting launcher...')
 
@@ -746,6 +741,8 @@ class Application(Frame):
             ret_val = proc.wait()
 
             if ret_val == 0:
+                self.files.append(self.launcher_region)
+
                 # Hash 00000002.app
                 sha1_hash = sha1()
 
@@ -775,19 +772,6 @@ class Application(Frame):
     def install_hiyacfw(self, launcher_path):
         self.log.write('\nCopying HiyaCFW files...')
 
-        try:
-            self.log.write('- Deleting stock launcher title.tmd...')
-            if self.launcher_region == 'USA':
-                remove(path.join(self.sd_path, 'title', '00030017', '484e4145', 'content', 'title.tmd'))
-            if self.launcher_region == 'JAP':
-                remove(path.join(self.sd_path, 'title', '00030017', '484e414a', 'content', 'title.tmd'))
-            if self.launcher_region == 'EUR':
-                remove(path.join(self.sd_path, 'title', '00030017', '484e4150', 'content', 'title.tmd'))
-            if self.launcher_region == 'AUS':
-                remove(path.join(self.sd_path, 'title', '00030017', '484e4155', 'content', 'title.tmd'))
-        except:
-            pass
-
         copy_tree('for SDNAND SD card', self.sd_path, update=1)
         move('bootloader.nds', path.join(self.sd_path, 'hiya', 'bootloader.nds'))
         move('00000002.app', launcher_path)
@@ -797,45 +781,30 @@ class Application(Frame):
 
     ################################################################################################
     def get_latest_twilight(self):
-        filename = False
-
-        # Release archives names
-        names = ( 'TWiLightMenu.7z', 'DSiMenuPP.7z', 'DSiMenuPlusPlus.7z', 'SRLoader.7z' )
-
-        for name in names:
-            if (path.isfile(name)):
-                filename = name
-                break
+        filename = 'TWiLightMenu.7z'
 
         try:
-            if filename:
-                self.log.write('\nPreparing custom firmware...')
+            self.log.write('\nDownloading latest TWiLight Menu++ release...')
 
-            else:
-                self.log.write('\nDownloading latest TWiLight Menu++ release...')
+            conn = urlopen('https://api.github.com/repos/RocketRobz/TWiLightMenu/releases/'
+                'latest')
+            latest = jsonify(conn)
+            conn.close()
 
-                conn = urlopen('https://api.github.com/repos/RocketRobz/TWiLightMenu/releases/'
-                    'latest')
-                latest = jsonify(conn)
-                conn.close()
-
-                filename = names[0]
-                urlretrieve(latest['assets'][0]['browser_download_url'], filename)
+            urlretrieve(latest['assets'][0]['browser_download_url'], filename)
 
             self.log.write('- Extracting ' + filename[:-3] + ' archive...')
 
             exe = path.join(sysname, '7za')
 
-            proc = Popen([ exe, 'x', '-bso0', '-y', filename, 'Autoboot for HiyaCFW',
-                'CFW - SDNAND root', 'DSiWare (' + self.launcher_region + ')', '_nds', 'roms',
+            proc = Popen([ exe, 'x', '-bso0', '-y', filename, 'DSi - CFW users', '_nds', 'roms',
                 'BOOT.NDS' ])
 
             ret_val = proc.wait()
 
             if ret_val == 0:
-                self.folders.append('Autoboot for HiyaCFW')
-                self.folders.append('CFW - SDNAND root')
-                self.folders.append('DSiWare (' + self.launcher_region + ')')
+                self.files.append(filename)
+                self.folders.append('DSi - CFW users')
                 Thread(target=self.install_twilight, args=(filename[:-3],)).start()
 
             else:
@@ -855,14 +824,12 @@ class Application(Frame):
     def install_twilight(self, name):
         self.log.write('\nCopying ' + name + ' files...')
 
-        copy_tree('CFW - SDNAND root', self.sd_path, update=1)
+        copy_tree(path.join('DSi - CFW users', 'SDNAND root'), self.sd_path, update=1)
         move('_nds', path.join(self.sd_path, '_nds'))
         move('roms', path.join(self.sd_path, 'roms'))
         move('BOOT.NDS', path.join(self.sd_path, 'BOOT.NDS'))
-        copy_tree('DSiWare (' + self.launcher_region + ')',
-             path.join(self.sd_path, 'roms', 'dsiware'),update=1)
-        move(path.join('Autoboot for HiyaCFW', 'autoboot.bin'),
-            path.join(self.sd_path, 'hiya', 'autoboot.bin'))
+        copy_tree(path.join('DSi - CFW users', 'DSiWare (' + self.launcher_region + ')'),
+             path.join(self.sd_path, 'roms', 'dsiware'), update=1)
 
         # Set files as read-only
         twlcfg0 = path.join(self.sd_path, 'shared1', 'TWLCFG0.dat')
@@ -1253,7 +1220,7 @@ elif sysname == 'Linux':
         root.destroy()
         exit(1)
 
-root.title('HiyaCFW Helper v2.9.9.3')
+root.title('HiyaCFW Helper v2.9.9.4')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window
