@@ -330,15 +330,6 @@ class Application(Frame):
 
         except (URLError, IOError) as e:
             self.log.write('ERROR: Could not get HiyaCFW')
-            if self.twilight.get():
-                self.log.write('\nPlease download the latest versions of HiyaCFW and\nTWiLight Menu++ from:')
-                self.log.write('\nhttps://github.com/RocketRobz/hiyaCFW/releases')
-                self.log.write('https://github.com/RocketRobz/TWiLightMenu/releases')
-                self.log.write('\nThen place the files in this folder.')
-            else:
-                self.log.write('\nPlease download the latest version of HiyaCFW from:')
-                self.log.write('\nhttps://github.com/RocketRobz/hiyaCFW/releases')
-                self.log.write('\nThen place the file in this folder.')
 
         except OSError:
             self.log.write('ERROR: Could not execute ' + exe)
@@ -825,7 +816,7 @@ class Application(Frame):
         self.log.write('\nCopying ' + name + ' files...')
 
         copy_tree(path.join('DSi - CFW users', 'SDNAND root'), self.sd_path, update=1)
-        move('_nds', path.join(self.sd_path, '_nds'))
+        move('_nds'.decode('utf-8'), path.join(self.sd_path, '_nds'))
         move('roms', path.join(self.sd_path, 'roms'))
         move('BOOT.NDS', path.join(self.sd_path, 'BOOT.NDS'))
         copy_tree(path.join('DSi - CFW users', 'DSiWare (' + self.launcher_region + ')'),
@@ -1220,7 +1211,7 @@ elif sysname == 'Linux':
         root.destroy()
         exit(1)
 
-root.title('HiyaCFW Helper v2.9.9.4')
+root.title('HiyaCFW Helper v2.9.9.5')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window
