@@ -7,7 +7,7 @@ from tkMessageBox import askokcancel, showerror, showinfo, WARNING
 from tkFileDialog import askopenfilename, askdirectory
 from platform import system
 from os import path, remove, chmod, listdir, rename
-from sys import exit
+from sys import exit, getfilesystemencoding, getdefaultencoding
 from locale import getpreferredencoding
 from threading import Thread
 from Queue import Queue, Empty
@@ -816,7 +816,8 @@ class Application(Frame):
         self.log.write('\nCopying ' + name + ' files...')
 
         copy_tree(path.join('DSi - CFW users', 'SDNAND root'), self.sd_path, update=1)
-        move('_nds'.decode('utf-8'), path.join(self.sd_path, '_nds'))
+        move('_nds'.encode(getfilesystemencoding() or getdefaultencoding()),
+            path.join(self.sd_path, '_nds'))
         move('roms', path.join(self.sd_path, 'roms'))
         move('BOOT.NDS', path.join(self.sd_path, 'BOOT.NDS'))
         copy_tree(path.join('DSi - CFW users', 'DSiWare (' + self.launcher_region + ')'),
