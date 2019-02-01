@@ -1,20 +1,22 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
-from Tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutton, Radiobutton,
+# HiyaCFW Helper
+# Version 3.0.0
+# Author: mondul <mondul@huyzona.com>
+
+from tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutton, Radiobutton,
     Label, Toplevel, Scrollbar, Text, StringVar, IntVar, RIGHT, W, X, Y, DISABLED, NORMAL, SUNKEN,
     END)
-from tkMessageBox import askokcancel, showerror, showinfo, WARNING
-from tkFileDialog import askopenfilename, askdirectory
+from tkinter.messagebox import askokcancel, showerror, showinfo, WARNING
+from tkinter.filedialog import askopenfilename, askdirectory
 from platform import system
 from os import path, remove, chmod, listdir, rename
-from sys import exit, getfilesystemencoding, getdefaultencoding
-from locale import getpreferredencoding
+from sys import exit
 from threading import Thread
-from Queue import Queue, Empty
-from binascii import hexlify
+from queue import Queue, Empty
 from hashlib import sha1
-from urllib2 import urlopen, URLError
-from urllib import urlretrieve
+from urllib.request import urlopen, urlretrieve
+from urllib.error import URLError
 from json import load as jsonify
 from subprocess import Popen, PIPE
 from struct import unpack_from
@@ -50,7 +52,7 @@ class ThreadSafeText(Text):
 
 class Application(Frame):
     def __init__(self, master=None):
-        Frame.__init__(self, master)
+        super().__init__(master)
 
         self.pack()
 
@@ -169,10 +171,10 @@ class Application(Frame):
     ################################################################################################
     def choose_nand(self):
         name = askopenfilename(filetypes=( ( 'nand.bin', '*.bin' ), ( 'DSi-1.mmc', '*.mmc' ) ))
-        self.nand_file.set(name.encode(getpreferredencoding()))
+        self.nand_file.set(name)
 
-        self.nand_button['state'] = (NORMAL if self.nand_file.get() != '' else DISABLED)
-        self.start_button['state'] = (NORMAL if self.nand_file.get() != '' else DISABLED)
+        self.nand_button['state'] = (NORMAL if name != '' else DISABLED)
+        self.start_button['state'] = (NORMAL if name != '' else DISABLED)
 
 
     ################################################################################################
@@ -268,12 +270,12 @@ class Application(Frame):
                 if bstr == b'DSi eMMC CID/CPU':
                     # Read the CID
                     bstr = f.read(0x10)
-                    self.cid.set(hexlify(bstr).upper())
+                    self.cid.set(bstr.hex().upper())
                     self.log.write('- eMMC CID: ' + self.cid.get())
 
                     # Read the console ID
                     bstr = f.read(8)
-                    self.console_id.set(hexlify(bytearray(reversed(bstr))).upper())
+                    self.console_id.set(bytearray(reversed(bstr)).hex().upper())
                     self.log.write('- Console ID: ' + self.console_id.get())
 
                     # Check we are making an unlaunch operation or removing the No$GBA footer
@@ -354,7 +356,7 @@ class Application(Frame):
                     sha1_hash.update(f.read())
 
                 self.log.write('- arm7.bin SHA1:\n  ' +
-                    hexlify(sha1_hash.digest()).upper())
+                    sha1_hash.digest().hex().upper())
 
                 # Hash arm9.bin
                 sha1_hash = sha1()
@@ -363,7 +365,7 @@ class Application(Frame):
                     sha1_hash.update(f.read())
 
                 self.log.write('- arm9.bin SHA1:\n  ' +
-                    hexlify(sha1_hash.digest()).upper())
+                    sha1_hash.digest().hex().upper())
 
                 self.files.append('arm7.bin')
                 self.files.append('arm9.bin')
@@ -397,7 +399,7 @@ class Application(Frame):
                 sha1_hash.update(f.read())
 
             self.log.write('- Patched arm7.bin SHA1:\n  ' +
-                hexlify(sha1_hash.digest()).upper())
+                sha1_hash.digest().hex().upper())
 
             # Hash arm9.bin
             sha1_hash = sha1()
@@ -406,7 +408,7 @@ class Application(Frame):
                 sha1_hash.update(f.read())
 
             self.log.write('- Patched arm9.bin SHA1:\n  ' +
-                hexlify(sha1_hash.digest()).upper())
+                sha1_hash.digest().hex().upper())
 
             Thread(target=self.arm9_prepend).start()
 
@@ -441,7 +443,7 @@ class Application(Frame):
                 sha1_hash.update(f.read())
 
             self.log.write('- Prepended arm9.bin SHA1:\n  ' +
-                hexlify(sha1_hash.digest()).upper())
+                sha1_hash.digest().hex().upper())
 
             Thread(target=self.make_bootloader).start()
 
@@ -472,7 +474,7 @@ class Application(Frame):
                     sha1_hash.update(f.read())
 
                 self.log.write('- bootloader.nds SHA1:\n  ' +
-                    hexlify(sha1_hash.digest()).upper())
+                    sha1_hash.digest().hex().upper())
 
                 Thread(target=self.decrypt_nand).start()
 
@@ -531,7 +533,7 @@ class Application(Frame):
                 outs, errs = proc.communicate()
 
                 if proc.returncode == 0:
-                    self.mounted = search(r'[a-zA-Z]:\s', outs).group(0).strip()
+                    self.mounted = search(r'[a-zA-Z]:\s', outs.decode('utf-8')).group(0).strip()
                     self.log.write('- Mounted on drive ' + self.mounted)
 
                 else:
@@ -553,7 +555,7 @@ class Application(Frame):
                 outs, errs = proc.communicate()
 
                 if proc.returncode == 0:
-                    self.raw_disk = search(r'^\/dev\/disk\d+', outs).group(0)
+                    self.raw_disk = search(r'^\/dev\/disk\d+', outs.decode('utf-8')).group(0)
                     self.log.write('- Mounted raw disk on ' + self.raw_disk)
 
                     cmd = [ exe, 'mount', self.raw_disk + 's1' ]
@@ -566,7 +568,7 @@ class Application(Frame):
                     outs, errs = proc.communicate()
 
                     if proc.returncode == 0:
-                        self.mounted = search(r'\/Volumes\/.+', outs).group(0)
+                        self.mounted = search(r'\/Volumes\/.+', outs.decode('utf-8')).group(0)
                         self.log.write('- Mounted volume on ' + self.mounted)
 
                     else:
@@ -591,7 +593,7 @@ class Application(Frame):
                 outs, errs = proc.communicate()
 
                 if proc.returncode == 0:
-                    self.loop_dev = search(r'\/dev\/loop\d+', outs).group(0)
+                    self.loop_dev = search(r'\/dev\/loop\d+', outs.decode('utf-8')).group(0)
                     self.log.write('- Mounted loop device on ' + self.loop_dev)
 
                     exe = 'mount'
@@ -741,7 +743,7 @@ class Application(Frame):
                     sha1_hash.update(f.read())
 
                 self.log.write('- Patched launcher SHA1:\n  ' +
-                    hexlify(sha1_hash.digest()).upper())
+                    sha1_hash.digest().hex().upper())
 
                 Thread(target=self.install_hiyacfw, args=(path.join(self.sd_path, 'title',
                     '00030017', app, 'content', '00000002.app'),)).start()
@@ -788,14 +790,15 @@ class Application(Frame):
 
             exe = path.join(sysname, '7za')
 
-            proc = Popen([ exe, 'x', '-bso0', '-y', filename, 'DSi - CFW users', '_nds', 'roms',
-                'BOOT.NDS' ])
+            proc = Popen([ exe, 'x', '-bso0', '-y', filename, '_nds', 'DSi - CFW users',
+                'DSi&3DS - SD card users', 'roms' ])
 
             ret_val = proc.wait()
 
             if ret_val == 0:
                 self.files.append(filename)
                 self.folders.append('DSi - CFW users')
+                self.folders.append('DSi&3DS - SD card users')
                 Thread(target=self.install_twilight, args=(filename[:-3],)).start()
 
             else:
@@ -816,12 +819,9 @@ class Application(Frame):
         self.log.write('\nCopying ' + name + ' files...')
 
         copy_tree(path.join('DSi - CFW users', 'SDNAND root'), self.sd_path, update=1)
-        move('_nds'.encode(getfilesystemencoding() or getdefaultencoding()),
-            path.join(self.sd_path, '_nds'))
+        move('_nds', path.join(self.sd_path, '_nds'))
+        copy_tree('DSi&3DS - SD card users', self.sd_path, update=1)
         move('roms', path.join(self.sd_path, 'roms'))
-        move('BOOT.NDS', path.join(self.sd_path, 'BOOT.NDS'))
-        copy_tree(path.join('DSi - CFW users', 'DSiWare (' + self.launcher_region + ')'),
-             path.join(self.sd_path, 'roms', 'dsiware'), update=1)
 
         # Set files as read-only
         twlcfg0 = path.join(self.sd_path, 'shared1', 'TWLCFG0.dat')
@@ -836,19 +836,6 @@ class Application(Frame):
         else:
             chmod(twlcfg0, 292)
             chmod(twlcfg1, 292)
-
-        # Generate launchargs
-        for app in listdir(path.join(self.sd_path, 'title', '00030004')):
-            try:
-                for title in listdir(path.join(self.sd_path, 'title', '00030004', app,
-                    'content')):
-                    if title.endswith('.app'):
-                        with open(path.join(self.sd_path, 'roms', 'dsiware', app + '.launcharg'),
-                            'w') as launcharg:
-                            launcharg.write('sd:/title/00030004/' + app + '/')
-
-            except:
-                pass
 
         Thread(target=self.clean).start()
 
@@ -1179,7 +1166,7 @@ root = Tk()
 
 if sysname == 'Windows':
     from ctypes import windll
-    from _winreg import OpenKey, QueryValueEx, HKEY_LOCAL_MACHINE
+    from winreg import OpenKey, QueryValueEx, HKEY_LOCAL_MACHINE
 
     if windll.shell32.IsUserAnAdmin() == 0:
         root.withdraw()
@@ -1212,7 +1199,7 @@ elif sysname == 'Linux':
         root.destroy()
         exit(1)
 
-root.title('HiyaCFW Helper v2.9.9.5')
+root.title('HiyaCFW Helper v3.0.0')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window

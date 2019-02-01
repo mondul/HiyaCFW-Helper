@@ -13,7 +13,7 @@ In order to make things easier for me, and because I don't have Windows, I edite
 * Uses your platform's twltool (binaries for Linux and MacOS included) to decrypt the NAND.
 * Mounts the decrypted NAND (OSFMount required for Windows) and extracts it to the chosen output destination.
 * Installs the HiyaCFW and the patched files on the chosen output destination.
-* (Optional) installs the latest release of TWiLightMenu++ (or any of the previous releases of it or DSiMenu++ or SRLoader placed at the same folder as the helper) on the chosen output destination.
+* (Optional) installs the latest release of TWiLightMenu++ on the chosen output destination.
 
 ### _NAND mode:_
 Clicking on the integrated circuit button will give you a NAND mode, where you can uninstall unlaunch or install its v1.4 stable release, remove the No$GBA footer or add it. Recommended only for those with a hardmod.
@@ -24,11 +24,11 @@ Clicking on the integrated circuit button will give you a NAND mode, where you c
 * You will need to run the _HiyaCFW_Helper.exe_ file as administrator in order to mount the decrypted NAND.
 
 ### _Linux:_
-* Python 2.7 with the Tk library (I had to do `sudo apt-get install python python-tk -y` in my LUbuntu virtual machine; `sudo dnf install python-tkinter` in Fedora).
+* Python >3.5 with the Tk library (I had to do `sudo apt-get install python3-tk -y` in my LUbuntu virtual machine; `sudo dnf install python3-tkinter` in Fedora).
 * You will need to run the script as sudo in order to mount the decrypted NAND.
 
 ### _MacOS:_
-* Nothing, as it already includes Python 2.7 with the Tk library and doesn't need root to mount the decrypted NAND.
+*  Python >3.5, you can install it with homebrew (install homebrew by running `/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"` in a terminal window, then `brew install python`).
 
 ## What it includes:
 * 7za binaries for Windows, Linux and MacOS. It's used to decompress the HiyaCFW latest release as [@RocketRobz](https://github.com/RocketRobz) uploaded it as a 7z archive. Compiled from the [kornelski's GitHub repo](https://github.com/kornelski/7z).
