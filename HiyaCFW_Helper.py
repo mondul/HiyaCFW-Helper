@@ -1094,7 +1094,7 @@ class Application(Frame):
             copyfile(self.nand_file.get(), file)
 
             # Back-up footer info
-            with open(self.console_id.get() + '-info.txt', 'wb') as f:
+            with open(self.console_id.get() + '-info.txt', 'w') as f:
                 f.write('eMMC CID: ' + self.cid.get() + '\r\n')
                 f.write('Console ID: ' + self.console_id.get() + '\r\n')
 
