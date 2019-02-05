@@ -205,16 +205,16 @@ class Application(Frame):
 
             # Parse strings to hex
             try:
-                cid = cid.decode('hex')
+                cid = bytearray.fromhex(cid)
 
-            except TypeError:
+            except ValueError:
                 showerror('Error', 'Bad eMMC CID')
                 return
 
             try:
-                console_id = bytearray(reversed(console_id.decode('hex')))
+                console_id = bytearray(reversed(bytearray.fromhex(console_id)))
 
-            except TypeError:
+            except ValueError:
                 showerror('Error', 'Bad Console ID')
                 return
 
@@ -1140,7 +1140,7 @@ class Application(Frame):
                     self.log.write('ERROR: File already has a No$GBA footer')
                     f.close()
                     remove(file)
-                    return;
+                    return
 
                 # Go to the end of file
                 f.seek(0, 2)
@@ -1148,8 +1148,8 @@ class Application(Frame):
                 f.write(b'DSi eMMC CID/CPU')
                 f.write(cid)
                 f.write(console_id)
-                f.write('\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-                    '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+                f.write(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+                    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
 
             self.log.write('\nDone!\nModified NAND stored as\n' + file)
 
