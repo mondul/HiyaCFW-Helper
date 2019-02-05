@@ -24,7 +24,7 @@ Clicking on the integrated circuit button will give you a NAND mode, where you c
 * You will need to run the _HiyaCFW_Helper.exe_ file as administrator in order to mount the decrypted NAND.
 
 ### _Linux:_
-* Python >3.5 with the Tk library (I had to do `sudo apt-get install python3-tk -y` in my LUbuntu virtual machine; `sudo dnf install python3-tkinter` in Fedora).
+* Python >3.5 with the Tk library (I had to do `sudo apt-get install python3-tk -y` in my Ubuntu virtual machine, `sudo dnf install python3-tkinter` in Fedora, `sudo pacman -S tk` in Arch Linux). You might need to install the Python 3 distutils package also.
 * You will need to run the script as sudo in order to mount the decrypted NAND.
 
 ### _MacOS:_
