@@ -28,7 +28,9 @@ Clicking on the integrated circuit button will give you a NAND mode, where you c
 * You will need to run the script as sudo in order to mount the decrypted NAND.
 
 ### _MacOS:_
-*  Python >3.5, you can install it with homebrew (install homebrew by running `/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"` in a terminal window, then `brew install python`).
+* Python >3.5, you can install it with one of these options:
+  * Homebrew (install homebrew by running `/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"` in a terminal window, then `brew install python`).
+  * The latest installer from the [python.org releases page](https://www.python.org/downloads/release) ([3.7.2](https://www.python.org/ftp/python/3.7.2/python-3.7.2-macosx10.9.pkg) at the time of this writing). **NOTE:** Using this option you might need to go to `Applications` > `Python 3.<version>` and run `Install Certificates.command`. This will avoid the `"Could not get HiyaCFW"` error.
 
 ## What it includes:
 * 7za binaries for Windows, Linux and MacOS. It's used to decompress the HiyaCFW latest release as [@RocketRobz](https://github.com/RocketRobz) uploaded it as a 7z archive. Compiled from the [kornelski's GitHub repo](https://github.com/kornelski/7z).
