@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # HiyaCFW Helper
-# Version 3.0.0
+# Version 3.0.1
 # Author: mondul <mondul@huyzona.com>
 
 from tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutton, Radiobutton,
@@ -1199,7 +1199,7 @@ elif sysname == 'Linux':
         root.destroy()
         exit(1)
 
-root.title('HiyaCFW Helper v3.0.0')
+root.title('HiyaCFW Helper v3.0.1')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window
