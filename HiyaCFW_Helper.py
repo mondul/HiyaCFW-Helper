@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # HiyaCFW Helper
-# Version 3.0.1
+# Version 3.0.2
 # Author: mondul <mondul@huyzona.com>
 
 from tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutton, Radiobutton,
@@ -293,7 +293,8 @@ class Application(Frame):
                 else:
                     self.log.write('ERROR: No$GBA footer not found')
 
-        except IOError:
+        except IOError as e:
+            print(e)
             self.log.write('ERROR: Could not open the file ' +
                 path.basename(self.nand_file.get()))
 
@@ -331,9 +332,11 @@ class Application(Frame):
                 self.log.write('ERROR: Extractor failed')
 
         except (URLError, IOError) as e:
+            print(e)
             self.log.write('ERROR: Could not get HiyaCFW')
 
-        except OSError:
+        except OSError as e:
+            print(e)
             self.log.write('ERROR: Could not execute ' + exe)
 
 
@@ -376,7 +379,8 @@ class Application(Frame):
                 self.log.write('ERROR: Extractor failed')
                 Thread(target=self.clean, args=(True,)).start()
 
-        except OSError:
+        except OSError as e:
+            print(e)
             self.log.write('ERROR: Could not execute ' + exe)
             Thread(target=self.clean, args=(True,)).start()
 
@@ -412,11 +416,13 @@ class Application(Frame):
 
             Thread(target=self.arm9_prepend).start()
 
-        except IOError:
+        except IOError as e:
+            print(e)
             self.log.write('ERROR: Could not patch BIOS')
             Thread(target=self.clean, args=(True,)).start()
 
-        except Exception:
+        except Exception as e:
+            print(e)
             self.log.write('ERROR: Invalid patch header')
             Thread(target=self.clean, args=(True,)).start()
 
@@ -447,7 +453,8 @@ class Application(Frame):
 
             Thread(target=self.make_bootloader).start()
 
-        except IOError:
+        except IOError as e:
+            print(e)
             self.log.write('ERROR: Could not prepend data to ARM9 BIOS')
             Thread(target=self.clean, args=(True,)).start()
 
@@ -482,7 +489,8 @@ class Application(Frame):
                 self.log.write('ERROR: Generator failed')
                 Thread(target=self.clean, args=(True,)).start()
 
-        except OSError:
+        except OSError as e:
+            print(e)
             self.log.write('ERROR: Could not execute ' + exe)
             Thread(target=self.clean, args=(True,)).start()
 
@@ -509,7 +517,8 @@ class Application(Frame):
                 self.log.write('ERROR: Decryptor failed')
                 Thread(target=self.clean, args=(True,)).start()
 
-        except OSError:
+        except OSError as e:
+            print(e)
             self.log.write('ERROR: Could not execute ' + exe)
             Thread(target=self.clean, args=(True,)).start()
 
@@ -625,7 +634,8 @@ class Application(Frame):
             # Check we are making an unlaunch operation
             Thread(target=self.unlaunch_proc if self.nand_mode else self.extract_nand).start()
 
-        except OSError:
+        except OSError as e:
+            print(e)
             self.log.write('ERROR: Could not execute ' + exe)
             Thread(target=self.clean, args=(True,)).start()
 
@@ -641,7 +651,8 @@ class Application(Frame):
         try:
             copy_tree(self.mounted, self.sd_path, preserve_mode=0, update=1)
 
-        except:
+        except Exception as e:
+            print(e)
             self.log.write('ERROR: Extractor failed')
             err = True
 
@@ -694,7 +705,8 @@ class Application(Frame):
                 self.log.write('ERROR: Unmounter failed')
                 Thread(target=self.clean, args=(True,)).start()
 
-        except OSError:
+        except OSError as e:
+            print(e)
             self.log.write('ERROR: Could not execute ' + exe)
             Thread(target=self.clean, args=(True,)).start()
 
@@ -752,11 +764,13 @@ class Application(Frame):
                 self.log.write('ERROR: Extractor failed')
                 Thread(target=self.clean, args=(True,)).start()
 
-        except IOError:
+        except IOError as e:
+            print(e)
             self.log.write('ERROR: Could not download ' + self.launcher_region + ' launcher')
             Thread(target=self.clean, args=(True,)).start()
 
-        except OSError:
+        except OSError as e:
+            print(e)
             self.log.write('ERROR: Could not execute ' + exe)
             Thread(target=self.clean, args=(True,)).start()
 
@@ -806,10 +820,12 @@ class Application(Frame):
                 Thread(target=self.clean, args=(True,)).start()
 
         except (URLError, IOError) as e:
+            print(e)
             self.log.write('ERROR: Could not get TWiLight Menu++')
             Thread(target=self.clean, args=(True,)).start()
 
-        except OSError:
+        except OSError as e:
+            print(e)
             self.log.write('ERROR: Could not execute ' + exe)
             Thread(target=self.clean, args=(True,)).start()
 
@@ -1031,11 +1047,13 @@ class Application(Frame):
                     # TODO: Unmount NAND
 
 
-            except IOError:
+            except IOError as e:
+                print(e)
                 self.log.write('ERROR: Could not get unlaunch')
                 # TODO: Unmount NAND
 
-            except OSError:
+            except OSError as e:
+                print(e)
                 self.log.write('ERROR: Could not execute ' + exe)
                 # TODO: Unmount NAND
 
@@ -1080,7 +1098,8 @@ class Application(Frame):
             else:
                 self.log.write('ERROR: Encryptor failed')
 
-        except OSError:
+        except OSError as e:
+            print(e)
             self.log.write('ERROR: Could not execute ' + exe)
 
 
@@ -1115,7 +1134,8 @@ class Application(Frame):
             self.log.write('\nDone!\nModified NAND stored as\n' + file +
                 '\nStored footer info in ' + self.console_id.get() + '-info.txt')
 
-        except IOError:
+        except IOError as e:
+            print(e)
             self.log.write('ERROR: Could not open the file ' +
                 path.basename(self.nand_file.get()))
 
@@ -1153,7 +1173,8 @@ class Application(Frame):
 
             self.log.write('\nDone!\nModified NAND stored as\n' + file)
 
-        except IOError:
+        except IOError as e:
+            print(e)
             self.log.write('ERROR: Could not open the file ' +
                 path.basename(self.nand_file.get()))
 
@@ -1199,7 +1220,7 @@ elif sysname == 'Linux':
         root.destroy()
         exit(1)
 
-root.title('HiyaCFW Helper v3.0.1')
+root.title('HiyaCFW Helper v3.0.2')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window
