@@ -301,16 +301,21 @@ class Application(Frame):
 
     ################################################################################################
     def get_latest_hiyacfw(self):
+        # Try to use already downloaded HiyaCFW archive
         filename = 'HiyaCFW.7z'
 
         try:
-            self.log.write('\nDownloading latest HiyaCFW release...')
+            if path.isfile(filename):
+                self.log.write('\nPreparing HiyaCFW...')
 
-            conn = urlopen('https://api.github.com/repos/RocketRobz/hiyaCFW/releases/latest')
-            latest = jsonify(conn)
-            conn.close()
+            else:
+                self.log.write('\nDownloading latest HiyaCFW release...')
 
-            urlretrieve(latest['assets'][0]['browser_download_url'], filename)
+                conn = urlopen('https://api.github.com/repos/RocketRobz/hiyaCFW/releases/latest')
+                latest = jsonify(conn)
+                conn.close()
+
+                urlretrieve(latest['assets'][0]['browser_download_url'], filename)
 
             self.log.write('- Extracting HiyaCFW archive...')
 
