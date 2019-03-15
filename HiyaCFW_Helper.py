@@ -511,6 +511,7 @@ class Application(Frame):
                 self.console_id.get() + '.img' ])
 
             ret_val = proc.wait()
+            print("\n")
 
             if ret_val == 0:
                 if not self.nand_mode:
@@ -1043,7 +1044,7 @@ class Application(Frame):
 
                         elif sysname == 'Linux':
                             Popen([ path.join('Linux', 'fatattr'), '+R', file ]).wait()
-   
+
                         else:
                             chmod(file, 292)
 
@@ -1076,7 +1077,7 @@ class Application(Frame):
 
                 elif sysname == 'Linux':
                     Popen([ path.join('Linux', 'fatattr'), '-R', file ]).wait()
-   
+
                 else:
                     chmod(file, 438)
 
@@ -1096,6 +1097,7 @@ class Application(Frame):
             proc = Popen([ exe, 'nandcrypt', '--in', self.console_id.get() + '.img' ])
 
             ret_val = proc.wait()
+            print("\n")
 
             if ret_val == 0:
                 Thread(target=self.clean).start()
