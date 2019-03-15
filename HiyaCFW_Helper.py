@@ -736,11 +736,16 @@ class Application(Frame):
         # Delete title.tmd in case it does not get overwritten
         remove(tmd)
 
+        # Try to use already downloaded launcher
         try:
-            self.log.write('\nDownloading ' + self.launcher_region + ' launcher...')
+            if path.isfile(self.launcher_region):
+                self.log.write('\nPreparing ' + self.launcher_region + ' launcher...')
 
-            urlretrieve('https://raw.githubusercontent.com/mondul/HiyaCFW-Helper/master/'
-                'launchers/' + self.launcher_region, self.launcher_region)
+            else:
+                self.log.write('\nDownloading ' + self.launcher_region + ' launcher...')
+
+                urlretrieve('https://raw.githubusercontent.com/mondul/HiyaCFW-Helper/master/'
+                    'launchers/' + self.launcher_region, self.launcher_region)
 
             self.log.write('- Decrypting launcher...')
 
