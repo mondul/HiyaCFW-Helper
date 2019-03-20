@@ -912,7 +912,7 @@ class Application(Frame):
         if sysname == 'Linux':
             Popen([ 'chown', '-R', ug + ':' + ug, self.sd_path ]).wait()
 
-        self.log.write('Done!\nExtract your SD card and insert it into your DSi')
+        self.log.write('Done!\nEject your SD card and insert it into your DSi')
 
 
     ################################################################################################
