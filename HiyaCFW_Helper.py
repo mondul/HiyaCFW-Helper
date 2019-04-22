@@ -804,7 +804,7 @@ class Application(Frame):
         try:
             self.log.write('\nDownloading latest TWiLight Menu++ release...')
 
-            conn = urlopen('https://api.github.com/repos/RocketRobz/TWiLightMenu/releases/'
+            conn = urlopen('https://api.github.com/repos/DS-Homebrew/TWiLightMenu/releases/'
                 'latest')
             latest = jsonify(conn)
             conn.close()
@@ -1232,7 +1232,7 @@ elif sysname == 'Linux':
         root.destroy()
         exit(1)
 
-root.title('HiyaCFW Helper v3.0.2')
+root.title('HiyaCFW Helper v3.1')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window
