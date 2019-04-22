@@ -15,13 +15,13 @@ from sys import exit
 from threading import Thread
 from queue import Queue, Empty
 from hashlib import sha1
-from urllib.request import urlopen, urlretrieve
+from urllib.request import urlopen
 from urllib.error import URLError
 from json import load as jsonify
 from subprocess import Popen, PIPE
 from struct import unpack_from
 from re import search
-from shutil import move, rmtree, copyfile
+from shutil import move, rmtree, copyfile, copyfileobj
 from distutils.dir_util import copy_tree, _path_created
 
 
@@ -315,7 +315,9 @@ class Application(Frame):
                 latest = jsonify(conn)
                 conn.close()
 
-                urlretrieve(latest['assets'][0]['browser_download_url'], filename)
+                with urlopen(latest['assets'][0]
+                    ['browser_download_url']) as src, open(filename, 'wb') as dst:
+                    copyfileobj(src, dst)
 
             self.log.write('- Extracting HiyaCFW archive...')
 
@@ -744,8 +746,10 @@ class Application(Frame):
             else:
                 self.log.write('\nDownloading ' + self.launcher_region + ' launcher...')
 
-                urlretrieve('https://raw.githubusercontent.com/mondul/HiyaCFW-Helper/master/'
-                    'launchers/' + self.launcher_region, self.launcher_region)
+                with urlopen('https://raw.githubusercontent.com'
+                    '/mondul/HiyaCFW-Helper/master/launchers/' +
+                    self.launcher_region) as src, open(self.launcher_region, 'wb') as dst:
+                    copyfileobj(src, dst)
 
             self.log.write('- Decrypting launcher...')
 
@@ -809,7 +813,9 @@ class Application(Frame):
             latest = jsonify(conn)
             conn.close()
 
-            urlretrieve(latest['assets'][0]['browser_download_url'], filename)
+                with urlopen(latest['assets'][0]
+                    ['browser_download_url']) as src, open(filename, 'wb') as dst:
+                    copyfileobj(src, dst)
 
             self.log.write('- Extracting ' + filename[:-3] + ' archive...')
 
@@ -1019,7 +1025,10 @@ class Application(Frame):
             self.log.write('- Not installed. Downloading v1.4...')
 
             try:
-                filename = urlretrieve('http://problemkaputt.de/unlau14.zip')[0]
+                filename = 'unlau14.zip'
+                with urlopen('http://problemkaputt.de'
+                    '/unlau14.zip') as src, open(filename, 'wb') as dst:
+                    copyfileobj(src, dst)
 
                 exe = path.join(sysname, '7za')
 
