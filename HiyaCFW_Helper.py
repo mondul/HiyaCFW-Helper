@@ -321,7 +321,7 @@ class Application(Frame):
 
             self.log.write('- Extracting HiyaCFW archive...')
 
-            exe = path.join(sysname, '7za')
+            exe = _7z if sysname == 'Windows' else path.join(sysname, '7za')
 
             proc = Popen([ exe, 'x', '-bso0', '-y', filename, 'for PC', 'for SDNAND SD card' ])
 
@@ -519,10 +519,45 @@ class Application(Frame):
                 if not self.nand_mode:
                     self.files.append(self.console_id.get() + '.img')
 
-                Thread(target=self.mount_nand).start()
+                Thread(target=self.win_extract_nand if sysname == 'Windows'
+                    else self.mount_nand).start()
 
             else:
                 self.log.write('ERROR: Decryptor failed')
+                Thread(target=self.clean, args=(True,)).start()
+
+        except OSError as e:
+            print(e)
+            self.log.write('ERROR: Could not execute ' + exe)
+            Thread(target=self.clean, args=(True,)).start()
+
+
+    ################################################################################################
+    def win_extract_nand(self):
+        self.log.write('\nExtracting files from NAND...')
+
+        try:
+            proc = Popen([ _7z, 'x', '-bso0', '-y', self.console_id.get() + '.img', '0.fat' ])
+
+            ret_val = proc.wait()
+
+            if ret_val == 0:
+                self.files.append('0.fat')
+
+                proc = Popen([ _7z, 'x', '-bso0', '-y', '-o' + self.sd_path, '0.fat' ])
+
+                ret_val = proc.wait()
+
+                if ret_val == 0:
+                    Thread(target=self.encrypt_nand if self.nand_mode
+                        else self.get_launcher).start()
+
+                else:
+                    self.log.write('ERROR: Extractor failed')
+                    Thread(target=self.clean, args=(True,)).start()
+
+            else:
+                self.log.write('ERROR: Extractor failed')
                 Thread(target=self.clean, args=(True,)).start()
 
         except OSError as e:
@@ -536,29 +571,7 @@ class Application(Frame):
         self.log.write('\nMounting decrypted NAND...')
 
         try:
-            if sysname == 'Windows':
-                exe = osfmount
-
-                cmd = [ osfmount, '-a', '-t', 'file', '-f', self.console_id.get() + '.img', '-m',
-                    '#:', '-o', 'ro,rem' ]
-
-                if self.nand_mode:
-                    cmd[-1] = 'rw,rem'
-
-                proc = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-
-                outs, errs = proc.communicate()
-
-                if proc.returncode == 0:
-                    self.mounted = search(r'[a-zA-Z]:\s', outs.decode('utf-8')).group(0).strip()
-                    self.log.write('- Mounted on drive ' + self.mounted)
-
-                else:
-                    self.log.write('ERROR: Mounter failed')
-                    Thread(target=self.clean, args=(True,)).start()
-                    return
-
-            elif sysname == 'Darwin':
+            if sysname == 'Darwin':
                 exe = 'hdiutil'
 
                 cmd = [ exe, 'attach', '-imagekey', 'diskimage-class=CRawDiskImage', '-nomount',
@@ -672,12 +685,7 @@ class Application(Frame):
         self.log.write('\nUnmounting NAND...')
 
         try:
-            if sysname == 'Windows':
-                exe = osfmount
-
-                proc = Popen([ osfmount, '-D', '-m', self.mounted ])
-
-            elif sysname == 'Darwin':
+            if sysname == 'Darwin':
                 exe = 'hdiutil'
 
                 proc = Popen([ exe, 'detach', self.raw_disk ])
@@ -732,8 +740,18 @@ class Application(Frame):
         # Check if unlaunch was installed on the NAND dump
         tmd = path.join(self.sd_path, 'title', '00030017', app, 'content', 'title.tmd')
 
+        # If it is installed, set the title.tmd file as read-write
         if path.getsize(tmd) > 520:
             self.log.write('- WARNING: Unlaunch installed on the NAND dump')
+
+            if sysname == 'Darwin':
+                Popen([ 'chflags', 'nouchg', tmd ]).wait()
+
+            elif sysname == 'Linux':
+                Popen([ path.join('Linux', 'fatattr'), '-R', tmd ]).wait()
+
+            else:
+                chmod(tmd, 438)
 
         # Delete title.tmd in case it does not get overwritten
         remove(tmd)
@@ -753,7 +771,7 @@ class Application(Frame):
 
             self.log.write('- Decrypting launcher...')
 
-            exe = path.join(sysname, '7za')
+            exe = _7z if sysname == 'Windows' else path.join(sysname, '7za')
 
             proc = Popen([ exe, 'x', '-bso0', '-y', '-p' + app, self.launcher_region,
                 '00000002.app' ])
@@ -813,13 +831,13 @@ class Application(Frame):
             latest = jsonify(conn)
             conn.close()
 
-                with urlopen(latest['assets'][0]
-                    ['browser_download_url']) as src, open(filename, 'wb') as dst:
-                    copyfileobj(src, dst)
+            with urlopen(latest['assets'][0]
+                ['browser_download_url']) as src, open(filename, 'wb') as dst:
+                copyfileobj(src, dst)
 
             self.log.write('- Extracting ' + filename[:-3] + ' archive...')
 
-            exe = path.join(sysname, '7za')
+            exe = _7z if sysname == 'Windows' else path.join(sysname, '7za')
 
             proc = Popen([ exe, 'x', '-bso0', '-y', filename, '_nds', 'DSi - CFW users',
                 'DSi&3DS - SD card users', 'roms' ])
@@ -1030,7 +1048,7 @@ class Application(Frame):
                     '/unlau14.zip') as src, open(filename, 'wb') as dst:
                     copyfileobj(src, dst)
 
-                exe = path.join(sysname, '7za')
+                exe = _7z if sysname == 'Windows' else path.join(sysname, '7za')
 
                 proc = Popen([ exe, 'x', '-bso0', '-y', filename, 'UNLAUNCH.DSI' ])
 
@@ -1207,28 +1225,23 @@ sysname = system()
 root = Tk()
 
 if sysname == 'Windows':
-    from ctypes import windll
     from winreg import OpenKey, QueryValueEx, HKEY_LOCAL_MACHINE
 
-    if windll.shell32.IsUserAnAdmin() == 0:
-        root.withdraw()
-        showerror('Error', 'This script needs to be run with administrator privileges.')
-        root.destroy()
-        exit(1)
-
-    # Search for OSFMount in the Windows registry
+    # Search for 7-Zip in the Windows registry
     try:
-        with OpenKey(HKEY_LOCAL_MACHINE,
-            'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\OSFMount_is1') as hkey:
+        with OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE\\7-Zip') as hkey:
+            _7z = path.join(QueryValueEx(hkey, 'Path')[0], '7z.exe')
 
-            osfmount = path.join(QueryValueEx(hkey, 'InstallLocation')[0], 'OSFMount.com')
+            if not path.exists(_7z):
+                # Check if 32-bit version was installed in a 64-bit system
+                _7z = path.join(QueryValueEx(hkey, 'Path32')[0], '7z.exe')
 
-            if not path.exists(osfmount):
-                raise WindowsError
+                if not path.exists(_7z):
+                    raise WindowsError
 
     except WindowsError:
         root.withdraw()
-        showerror('Error', 'This script needs OSFMount to run. Please install it.')
+        showerror('Error', 'This script needs 7-Zip to run. Please install it.')
         root.destroy()
         exit(1)
 

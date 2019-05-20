@@ -11,7 +11,7 @@ In order to make things easier for me, and because I don't have Windows, I edite
 * Autodetects the console region from the NAND dump, downloads and decrypts its v512 launcher.
 * Creates the patched _00000002.app_ and _bootloader.nds_ for the custom firmware.
 * Uses your platform's twltool (binaries for Linux and MacOS included) to decrypt the NAND.
-* Mounts the decrypted NAND (OSFMount required for Windows) and extracts it to the chosen output destination.
+* Mounts the decrypted NAND (on Linux and MacOS) and extracts it to the chosen output destination (7-Zip required for Windows).
 * Installs the HiyaCFW and the patched files on the chosen output destination.
 * (Optional) installs the latest release of TWiLightMenu++ on the chosen output destination.
 
@@ -20,8 +20,7 @@ Clicking on the integrated circuit button will give you a NAND mode, where you c
 
 ## Requirements:
 ### _Windows:_
-* OSFMount.
-* You will need to run the _HiyaCFW_Helper.exe_ file as administrator in order to mount the decrypted NAND.
+* 7-Zip.
 
 ### _Linux:_
 * Python >3.6 with the Tk library (I had to do `sudo apt-get install python3-tk -y` in my Ubuntu virtual machine, `sudo dnf install python3-tkinter` in Fedora, `sudo pacman -S tk` in Arch Linux). You might need to install the Python 3 distutils package also.
@@ -41,7 +40,7 @@ Clicking on the integrated circuit button will give you a NAND mode, where you c
 ## How to use it:
 ### _Windows:_
 * Go to the helper's folder.
-* Right-click on the _HiyaCFW_Helper.exe_ file and click _Run as administrator_.
+* Double-click on the _HiyaCFW_Helper.exe_ file.
 
 ### _Linux:_
 * Open a terminal.
