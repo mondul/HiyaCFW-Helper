@@ -321,9 +321,7 @@ class Application(Frame):
 
             self.log.write('- Extracting HiyaCFW archive...')
 
-            exe = _7z if sysname == 'Windows' else path.join(sysname, '7za')
-
-            proc = Popen([ exe, 'x', '-bso0', '-y', filename, 'for PC', 'for SDNAND SD card' ])
+            proc = Popen([ _7z, 'x', '-bso0', '-y', filename, 'for PC', 'for SDNAND SD card' ])
 
             ret_val = proc.wait()
 
@@ -351,10 +349,8 @@ class Application(Frame):
     def extract_bios(self):
         self.log.write('\nExtracting ARM7/ARM9 BIOS from NAND...')
 
-        exe = path.join(sysname, 'twltool')
-
         try:
-            proc = Popen([ exe, 'boot2', '--in', self.nand_file.get() ])
+            proc = Popen([ twltool, 'boot2', '--in', self.nand_file.get() ])
 
             ret_val = proc.wait()
 
@@ -506,10 +502,8 @@ class Application(Frame):
     def decrypt_nand(self):
         self.log.write('\nDecrypting NAND...')
 
-        exe = path.join(sysname, 'twltool')
-
         try:
-            proc = Popen([ exe, 'nandcrypt', '--in', self.nand_file.get(), '--out',
+            proc = Popen([ twltool, 'nandcrypt', '--in', self.nand_file.get(), '--out',
                 self.console_id.get() + '.img' ])
 
             ret_val = proc.wait()
@@ -572,10 +566,8 @@ class Application(Frame):
 
         try:
             if sysname == 'Darwin':
-                exe = 'hdiutil'
-
-                cmd = [ exe, 'attach', '-imagekey', 'diskimage-class=CRawDiskImage', '-nomount',
-                    self.console_id.get() + '.img' ]
+                cmd = [ 'hdiutil', 'attach', '-imagekey', 'diskimage-class=CRawDiskImage',
+                    '-nomount', self.console_id.get() + '.img' ]
 
                 if not self.nand_mode:
                     cmd.insert(2, '-readonly')
@@ -588,7 +580,7 @@ class Application(Frame):
                     self.raw_disk = search(r'^\/dev\/disk\d+', outs.decode('utf-8')).group(0)
                     self.log.write('- Mounted raw disk on ' + self.raw_disk)
 
-                    cmd = [ exe, 'mount', self.raw_disk + 's1' ]
+                    cmd = [ 'hdiutil', 'mount', self.raw_disk + 's1' ]
 
                     if not self.nand_mode:
                         cmd.insert(2, '-readonly')
@@ -612,9 +604,7 @@ class Application(Frame):
                     return
 
             else:  # Linux
-                exe = 'losetup'
-
-                cmd = [ exe, '-P', '-f', '--show', self.console_id.get() + '.img' ]
+                cmd = [ 'losetup', '-P', '-f', '--show', self.console_id.get() + '.img' ]
 
                 if not self.nand_mode:
                     cmd.insert(2, '-r')
@@ -626,11 +616,9 @@ class Application(Frame):
                     self.loop_dev = search(r'\/dev\/loop\d+', outs.decode('utf-8')).group(0)
                     self.log.write('- Mounted loop device on ' + self.loop_dev)
 
-                    exe = 'mount'
-
                     self.mounted = '/mnt'
 
-                    cmd = [ exe, '-t', 'vfat', self.loop_dev + 'p1', self.mounted ]
+                    cmd = [ 'mount', '-t', 'vfat', self.loop_dev + 'p1', self.mounted ]
 
                     if not self.nand_mode:
                         cmd.insert(1, '-r')
@@ -686,21 +674,15 @@ class Application(Frame):
 
         try:
             if sysname == 'Darwin':
-                exe = 'hdiutil'
-
-                proc = Popen([ exe, 'detach', self.raw_disk ])
+                proc = Popen([ 'hdiutil', 'detach', self.raw_disk ])
 
             else:  # Linux
-                exe = 'umount'
-
-                proc = Popen([ exe, self.mounted ])
+                proc = Popen([ 'umount', self.mounted ])
 
                 ret_val = proc.wait()
 
                 if ret_val == 0:
-                    exe = 'losetup'
-
-                    proc = Popen([ exe, '-d', self.loop_dev ])
+                    proc = Popen([ 'losetup', '-d', self.loop_dev ])
 
                 else:
                     self.log.write('ERROR: Unmounter failed')
@@ -748,7 +730,7 @@ class Application(Frame):
                 Popen([ 'chflags', 'nouchg', tmd ]).wait()
 
             elif sysname == 'Linux':
-                Popen([ path.join('Linux', 'fatattr'), '-R', tmd ]).wait()
+                Popen([ fatattr, '-R', tmd ]).wait()
 
             else:
                 chmod(tmd, 438)
@@ -771,9 +753,7 @@ class Application(Frame):
 
             self.log.write('- Decrypting launcher...')
 
-            exe = _7z if sysname == 'Windows' else path.join(sysname, '7za')
-
-            proc = Popen([ exe, 'x', '-bso0', '-y', '-p' + app, self.launcher_region,
+            proc = Popen([ _7z, 'x', '-bso0', '-y', '-p' + app, self.launcher_region,
                 '00000002.app' ])
 
             ret_val = proc.wait()
@@ -837,9 +817,7 @@ class Application(Frame):
 
             self.log.write('- Extracting ' + filename[:-3] + ' archive...')
 
-            exe = _7z if sysname == 'Windows' else path.join(sysname, '7za')
-
-            proc = Popen([ exe, 'x', '-bso0', '-y', filename, '_nds', 'DSi - CFW users',
+            proc = Popen([ _7z, 'x', '-bso0', '-y', filename, '_nds', 'DSi - CFW users',
                 'DSi&3DS - SD card users', 'roms' ])
 
             ret_val = proc.wait()
@@ -882,7 +860,7 @@ class Application(Frame):
             Popen([ 'chflags', 'uchg', twlcfg0, twlcfg1 ]).wait()
 
         elif sysname == 'Linux':
-            Popen([ path.join('Linux', 'fatattr'), '+R', twlcfg0, twlcfg1 ]).wait()
+            Popen([ fatattr, '+R', twlcfg0, twlcfg1 ]).wait()
 
         else:
             chmod(twlcfg0, 292)
@@ -1048,9 +1026,7 @@ class Application(Frame):
                     '/unlau14.zip') as src, open(filename, 'wb') as dst:
                     copyfileobj(src, dst)
 
-                exe = _7z if sysname == 'Windows' else path.join(sysname, '7za')
-
-                proc = Popen([ exe, 'x', '-bso0', '-y', filename, 'UNLAUNCH.DSI' ])
+                proc = Popen([ _7z, 'x', '-bso0', '-y', filename, 'UNLAUNCH.DSI' ])
 
                 ret_val = proc.wait()
 
@@ -1075,7 +1051,7 @@ class Application(Frame):
                             Popen([ 'chflags', 'uchg', file ]).wait()
 
                         elif sysname == 'Linux':
-                            Popen([ path.join('Linux', 'fatattr'), '+R', file ]).wait()
+                            Popen([ fatattr, '+R', file ]).wait()
 
                         else:
                             chmod(file, 292)
@@ -1108,7 +1084,7 @@ class Application(Frame):
                     Popen([ 'chflags', 'nouchg', file ]).wait()
 
                 elif sysname == 'Linux':
-                    Popen([ path.join('Linux', 'fatattr'), '-R', file ]).wait()
+                    Popen([ fatattr, '-R', file ]).wait()
 
                 else:
                     chmod(file, 438)
@@ -1123,10 +1099,8 @@ class Application(Frame):
     def encrypt_nand(self):
         self.log.write('\nEncrypting back NAND...')
 
-        exe = path.join(sysname, 'twltool')
-
         try:
-            proc = Popen([ exe, 'nandcrypt', '--in', self.console_id.get() + '.img' ])
+            proc = Popen([ twltool, 'nandcrypt', '--in', self.console_id.get() + '.img' ])
 
             ret_val = proc.wait()
             print("\n")
@@ -1224,26 +1198,41 @@ sysname = system()
 
 root = Tk()
 
-if sysname == 'Windows':
-    from winreg import OpenKey, QueryValueEx, HKEY_LOCAL_MACHINE
+twltool = path.join(sysname, 'twltool')
 
-    # Search for 7-Zip in the Windows registry
+if not path.exists(twltool):
+    root.withdraw()
+    showerror('Error', 'TWLTool not found. Please make sure the ' + sysname +
+        ' folder is at the same location as this script, or run it again from the terminal:' +
+        "\n\n$ " + ('sudo ' if sysname == 'Linux' else '') + './HiyaCFW_Helper.py')
+    root.destroy()
+    exit(1)
+
+elif sysname == 'Windows':
+    from winreg import OpenKey, QueryValueEx, HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_64KEY
+
+    # Search for 7-Zip in the 64-bit Windows registry
     try:
-        with OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE\\7-Zip') as hkey:
+        with OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE\\7-Zip', 0, KEY_READ | KEY_WOW64_64KEY) as hkey:
             _7z = path.join(QueryValueEx(hkey, 'Path')[0], '7z.exe')
 
             if not path.exists(_7z):
-                # Check if 32-bit version was installed in a 64-bit system
-                _7z = path.join(QueryValueEx(hkey, 'Path32')[0], '7z.exe')
+                raise WindowsError
+
+    except WindowsError:
+        # Search for 7-Zip in the 32-bit Windows registry
+        try:
+            with OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE\\7-Zip') as hkey:
+                _7z = path.join(QueryValueEx(hkey, 'Path')[0], '7z.exe')
 
                 if not path.exists(_7z):
                     raise WindowsError
 
-    except WindowsError:
-        root.withdraw()
-        showerror('Error', 'This script needs 7-Zip to run. Please install it.')
-        root.destroy()
-        exit(1)
+        except WindowsError:
+            root.withdraw()
+            showerror('Error', 'This script needs 7-Zip to run. Please install it.')
+            root.destroy()
+            exit(1)
 
 elif sysname == 'Linux':
     from os import getuid
@@ -1254,7 +1243,13 @@ elif sysname == 'Linux':
         root.destroy()
         exit(1)
 
-root.title('HiyaCFW Helper v3.1')
+    fatattr = path.join('Linux', 'fatattr')
+    _7z = path.join(sysname, '7za')
+
+else:   # MacOS
+    _7z = path.join(sysname, '7za')
+
+root.title('HiyaCFW Helper v3.2')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window
