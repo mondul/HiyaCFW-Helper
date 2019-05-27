@@ -20,19 +20,19 @@ Clicking on the integrated circuit button will give you a NAND mode, where you c
 
 ## Requirements:
 ### _Windows:_
-* 7-Zip.
+* 7-Zip 19.00 or greater.
 
 ### _Linux:_
-* Python >3.6 with the Tk library (I had to do `sudo apt-get install python3-tk -y` in my Ubuntu virtual machine, `sudo dnf install python3-tkinter` in Fedora, `sudo pacman -S tk` in Arch Linux). You might need to install the Python 3 distutils package also.
+* Python 3.6 or greater with the Tk library (I had to do `sudo apt-get install python3-tk -y` in my Ubuntu virtual machine, `sudo dnf install python3-tkinter` in Fedora, `sudo pacman -S tk` in Arch Linux). You might need to install the Python 3 distutils package also.
 * You will need to run the script as sudo in order to mount the decrypted NAND.
 
 ### _MacOS:_
-* Python >3.6, you can install it with one of these options:
+* Python 3.6 or greater, you can install it with one of these options:
   * _[Recommended]_ Homebrew (install homebrew by running `/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"` in a terminal window, then `brew install python`).
   * _[Might have issues]_ The latest installer from the [python.org releases page](https://www.python.org/downloads/release) ([3.7.2](https://www.python.org/ftp/python/3.7.2/python-3.7.2-macosx10.9.pkg) at the time of this writing). **NOTE:** Using this option you might need to go to `Applications` > `Python 3.<version>` and run `Install Certificates.command`. This will avoid the `"Could not get HiyaCFW"` error.
 
 ## What it includes:
-* 7za binaries for Windows, Linux and MacOS. It's used to decompress the HiyaCFW latest release as [@RocketRobz](https://github.com/RocketRobz) uploaded it as a 7z archive. Compiled from the [kornelski's GitHub repo](https://github.com/kornelski/7z).
+* 7za binaries for Linux and MacOS. It's used to decompress the HiyaCFW latest release as [@RocketRobz](https://github.com/RocketRobz) uploaded it as a 7z archive. Compiled from the [kornelski's GitHub repo](https://github.com/kornelski/7z).
 * twltool binaries for Windows, Linux and MacOS. Compiled from the [WinterMute's GitHub repo](https://github.com/WinterMute/twltool).
 * NDS bootloader creator binaries for Linux and MacOS (based off devkitPro's ndstool v1.27). Compiled from [my GitHub repo](https://github.com/mondul/NDS-Bootloader-Creator). For Windows the ndstool included with HiyaCFW is used.
 * fatattr binary for Linux. It's used for setting FAT attributes when writing to the FAT formatted SD card or in NAND mode. Compiled from the [Terseus' GitHub repo](https://github.com/Terseus/fatattr).
