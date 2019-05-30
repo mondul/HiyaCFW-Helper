@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # HiyaCFW Helper
-# Version 3.2
+# Version 3.3
 # Author: mondul <mondul@huyzona.com>
 
 from tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutton, Radiobutton,
@@ -18,9 +18,8 @@ from hashlib import sha1
 from urllib.request import urlopen
 from urllib.error import URLError
 from json import load as jsonify
-from subprocess import Popen, PIPE, DEVNULL
+from subprocess import Popen, DEVNULL
 from struct import unpack_from
-from re import search
 from shutil import rmtree, copyfile, copyfileobj
 from distutils.dir_util import copy_tree, _path_created
 
@@ -509,7 +508,7 @@ class Application(Frame):
                 self.files.append(self.console_id.get() + '.img')
 
                 Thread(target=self.win_extract_nand if sysname == 'Windows'
-                    else self.mount_nand).start()
+                    else self.extract_nand).start()
 
             else:
                 self.log.write('ERROR: Decryptor failed')
@@ -538,8 +537,7 @@ class Application(Frame):
                 ret_val = proc.wait()
 
                 if ret_val == 0:
-                    Thread(target=self.encrypt_nand if self.nand_mode
-                        else self.get_launcher).start()
+                    Thread(target=self.get_launcher).start()
 
                 else:
                     self.log.write('ERROR: Extractor failed')
@@ -556,133 +554,21 @@ class Application(Frame):
 
 
     ################################################################################################
-    def mount_nand(self):
-        self.log.write('\nMounting decrypted NAND...')
-
-        try:
-            if sysname == 'Darwin':
-                cmd = [ 'hdiutil', 'attach', '-readonly', '-imagekey',
-                    'diskimage-class=CRawDiskImage', '-nomount', self.console_id.get() + '.img' ]
-
-                proc = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-
-                outs, errs = proc.communicate()
-
-                if proc.returncode == 0:
-                    self.raw_disk = search(r'^\/dev\/disk\d+', outs.decode('utf-8')).group(0)
-                    self.log.write('- Mounted raw disk on ' + self.raw_disk)
-
-                    cmd = [ 'hdiutil', 'mount', '-readonly', self.raw_disk + 's1' ]
-
-                    proc = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-
-                    outs, errs = proc.communicate()
-
-                    if proc.returncode == 0:
-                        self.mounted = search(r'\/Volumes\/.+', outs.decode('utf-8')).group(0)
-                        self.log.write('- Mounted volume on ' + self.mounted)
-
-                    else:
-                        self.log.write('ERROR: Mounter failed')
-                        Thread(target=self.clean, args=(True,)).start()
-                        return
-
-                else:
-                    self.log.write('ERROR: Mounter failed')
-                    Thread(target=self.clean, args=(True,)).start()
-                    return
-
-            else:  # Linux
-                cmd = [ 'losetup', '-P', '-r', '-f', '--show', self.console_id.get() + '.img' ]
-
-                proc = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-                outs, errs = proc.communicate()
-
-                if proc.returncode == 0:
-                    self.loop_dev = search(r'\/dev\/loop\d+', outs.decode('utf-8')).group(0)
-                    self.log.write('- Mounted loop device on ' + self.loop_dev)
-
-                    self.mounted = '/mnt'
-
-                    cmd = [ 'mount', '-r', '-t', 'vfat', self.loop_dev + 'p1', self.mounted ]
-
-                    proc = Popen(cmd)
-
-                    ret_val = proc.wait()
-
-                    if ret_val == 0:
-                        self.log.write('- Mounted partition on ' + self.mounted)
-
-                    else:
-                        self.log.write('ERROR: Mounter failed')
-                        Thread(target=self.clean, args=(True,)).start()
-                        return
-
-                else:
-                    self.log.write('ERROR: Mounter failed')
-                    Thread(target=self.clean, args=(True,)).start()
-                    return
-
-            Thread(target=self.extract_nand).start()
-
-        except OSError as e:
-            print(e)
-            self.log.write('ERROR: Could not execute ' + exe)
-            Thread(target=self.clean, args=(True,)).start()
-
-
-    ################################################################################################
     def extract_nand(self):
         self.log.write('\nExtracting files from NAND...')
 
-        err = False
-
-        # Reset copied files cache
-        _path_created.clear()
         try:
-            copy_tree(self.mounted, self.sd_path, preserve_mode=0, update=1)
-
-        except Exception as e:
-            print(e)
-            self.log.write('ERROR: Extractor failed')
-            err = True
-
-        Thread(target=self.unmount_nand, args=(err,)).start()
-
-
-    ################################################################################################
-    def unmount_nand(self, err=False):
-        self.log.write('\nUnmounting NAND...')
-
-        try:
-            if sysname == 'Darwin':
-                proc = Popen([ 'hdiutil', 'detach', self.raw_disk ])
-
-            else:  # Linux
-                proc = Popen([ 'umount', self.mounted ])
-
-                ret_val = proc.wait()
-
-                if ret_val == 0:
-                    proc = Popen([ 'losetup', '-d', self.loop_dev ])
-
-                else:
-                    self.log.write('ERROR: Unmounter failed')
-                    Thread(target=self.clean, args=(True,)).start()
-                    return
+            # DSi first partition offset: 0010EE00h
+            proc = Popen([ fatcat, '-O', '1109504', '-x', self.sd_path,
+                self.console_id.get() + '.img' ])
 
             ret_val = proc.wait()
 
             if ret_val == 0:
-                if err:
-                    Thread(target=self.clean, args=(True,)).start()
-
-                else:
-                    Thread(target=self.encrypt_nand if self.nand_mode
-                        else self.get_launcher).start()
+                Thread(target=self.get_launcher).start()
 
             else:
-                self.log.write('ERROR: Unmounter failed')
+                self.log.write('ERROR: Extractor failed')
                 Thread(target=self.clean, args=(True,)).start()
 
         except OSError as e:
@@ -883,34 +769,6 @@ class Application(Frame):
             self.log.write('Done')
             return
 
-        # Get logged user in Linux
-        if sysname == 'Linux':
-            from os import getlogin
-
-            # Workaround for some Linux systems where this function does not work
-            try:
-                ug = getlogin()
-
-            except OSError:
-                ug = 'root'
-
-        if (self.nand_mode):
-            file = self.console_id.get() + self.suffix + '.bin'
-
-            rename(self.console_id.get() + '.img', file)
-
-            # Change owner of the file in Linux
-            if sysname == 'Linux':
-                Popen([ 'chown', '-R', ug + ':' + ug, file ], stdout=DEVNULL, stderr=DEVNULL).wait()
-
-            self.log.write('\nDone!\nModified NAND stored as\n' + file)
-            return
-
-        # Change owner of the out folder in Linux
-        if sysname == 'Linux':
-            Popen([ 'chown', '-R', ug + ':' + ug, self.sd_path ],
-                stdout=DEVNULL, stderr=DEVNULL).wait()
-
         self.log.write('Done!\nEject your SD card and insert it into your DSi')
 
 
@@ -1040,14 +898,6 @@ class Application(Frame):
                 # Remove footer
                 f.truncate()
 
-            # Change owner of the file in Linux
-            if sysname == 'Linux':
-                from os import getlogin
-
-                ug = getlogin()
-
-                Popen([ 'chown', '-R', ug + ':' + ug, file ], stdout=DEVNULL, stderr=DEVNULL).wait()
-
             self.log.write('\nDone!\nModified NAND stored as\n' + file +
                 '\nStored footer info in ' + self.console_id.get() + '-info.txt')
 
@@ -1113,8 +963,7 @@ if not path.exists(twltool):
     root.withdraw()
     showerror('Error', 'TWLTool not found. Please make sure the ' + sysname +
         ' folder is at the same location as this script' + ('.' if sysname == 'Windows'
-        else ", or run it again from the terminal:\n\n$ " +
-        ('sudo ' if sysname == 'Linux' else '') + './HiyaCFW_Helper.py'))
+        else ", or run it again from the terminal:\n\n$ ./HiyaCFW_Helper.py"))
     root.destroy()
     exit(1)
 
@@ -1146,22 +995,14 @@ elif sysname == 'Windows':
             root.destroy()
             exit(1)
 
-elif sysname == 'Linux':
-    from os import getuid
-
-    if getuid() != 0:
-        root.withdraw()
-        showerror('Error', 'This script needs to be run with sudo.')
-        root.destroy()
-        exit(1)
-
-    fatattr = path.join('Linux', 'fatattr')
+else:   # Linux and MacOS
+    fatcat = path.join(sysname, 'fatcat')
     _7z = path.join(sysname, '7za')
 
-else:   # MacOS
-    _7z = path.join(sysname, '7za')
+    if sysname == 'Linux':
+        fatattr = path.join('Linux', 'fatattr')
 
-root.title('HiyaCFW Helper v3.2')
+root.title('HiyaCFW Helper v3.3')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window
