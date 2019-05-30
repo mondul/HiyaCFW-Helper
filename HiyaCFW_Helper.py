@@ -1208,11 +1208,15 @@ class Application(Frame):
 ####################################################################################################
 # Entry point
 
+print('Opening HiyaCFW Helper...')
+
 sysname = system()
 
-root = Tk()
-
 twltool = path.join(sysname, 'twltool' + ('.exe' if sysname == 'Windows' else ''))
+
+print('Initializing GUI...')
+
+root = Tk()
 
 if not path.exists(twltool):
     root.withdraw()
@@ -1226,7 +1230,8 @@ if not path.exists(twltool):
 elif sysname == 'Windows':
     from winreg import OpenKey, QueryValueEx, HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_64KEY
 
-    # Search for 7-Zip in the 64-bit Windows registry
+    print('Searching for 7-Zip in the Windows registry...')
+
     try:
         with OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE\\7-Zip', 0, KEY_READ | KEY_WOW64_64KEY) as hkey:
             _7z = path.join(QueryValueEx(hkey, 'Path')[0], '7z.exe')
@@ -1235,7 +1240,8 @@ elif sysname == 'Windows':
                 raise WindowsError
 
     except WindowsError:
-        # Search for 7-Zip in the 32-bit Windows registry
+        print('Searching for 7-Zip in the 32-bit Windows registry...')
+
         try:
             with OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE\\7-Zip') as hkey:
                 _7z = path.join(QueryValueEx(hkey, 'Path')[0], '7z.exe')
