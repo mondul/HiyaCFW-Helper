@@ -21,7 +21,7 @@ from json import load as jsonify
 from subprocess import Popen, PIPE, DEVNULL
 from struct import unpack_from
 from re import search
-from shutil import move, rmtree, copyfile, copyfileobj
+from shutil import rmtree, copyfile, copyfileobj
 from distutils.dir_util import copy_tree, _path_created
 
 
@@ -480,6 +480,8 @@ class Application(Frame):
             ret_val = proc.wait()
 
             if ret_val == 0:
+                self.files.append('bootloader.nds')
+
                 # Hash bootloader.nds
                 sha1_hash = sha1()
 
@@ -718,7 +720,6 @@ class Application(Frame):
 
         # Stop if no supported region was found
         if not app:
-            self.files.append('bootloader.nds')
             Thread(target=self.clean, args=(True,)).start()
             return
 
@@ -755,6 +756,7 @@ class Application(Frame):
 
             if ret_val == 0:
                 self.files.append(self.launcher_region)
+                self.files.append('00000002.app')
 
                 # Hash 00000002.app
                 sha1_hash = sha1()
@@ -789,14 +791,14 @@ class Application(Frame):
 
         copy_tree('for SDNAND SD card', self.sd_path, update=1)
 
-        move('bootloader.nds', path.join(self.sd_path, 'hiya', 'bootloader.nds'))
+        copyfile('bootloader.nds', path.join(self.sd_path, 'hiya', 'bootloader.nds'))
 
         # Check if exists before moving it
         if (path.exists(launcher_path)):
             # If exists then remove it to avoid move error
             remove(launcher_path)
 
-        move('00000002.app', launcher_path)
+        copyfile('00000002.app', launcher_path)
 
         Thread(target=self.get_latest_twilight if self.twilight.get() == 1 else self.clean).start()
 
@@ -827,7 +829,9 @@ class Application(Frame):
             if ret_val == 0:
                 self.files.append(filename)
                 self.folders.append('DSi - CFW users')
+                self.folders.append('_nds')
                 self.folders.append('DSi&3DS - SD card users')
+                self.folders.append('roms')
                 Thread(target=self.install_twilight, args=(filename[:-3],)).start()
 
             else:
@@ -850,9 +854,9 @@ class Application(Frame):
         self.log.write('\nCopying ' + name + ' files...')
 
         copy_tree(path.join('DSi - CFW users', 'SDNAND root'), self.sd_path, update=1)
-        move('_nds', path.join(self.sd_path, '_nds'))
+        copy_tree('_nds', path.join(self.sd_path, '_nds'))
         copy_tree('DSi&3DS - SD card users', self.sd_path, update=1)
-        move('roms', path.join(self.sd_path, 'roms'))
+        copy_tree('roms', path.join(self.sd_path, 'roms'))
 
         # Set files as read-only
         twlcfg0 = path.join(self.sd_path, 'shared1', 'TWLCFG0.dat')
