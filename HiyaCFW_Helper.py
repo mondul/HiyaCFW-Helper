@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # HiyaCFW Helper
-# Version 3.0.2
+# Version 3.2
 # Author: mondul <mondul@huyzona.com>
 
 from tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutton, Radiobutton,
@@ -10,7 +10,7 @@ from tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutt
 from tkinter.messagebox import askokcancel, showerror, showinfo, WARNING
 from tkinter.filedialog import askopenfilename, askdirectory
 from platform import system
-from os import path, remove, chmod, listdir, rename
+from os import path, remove, chmod, rename, listdir
 from sys import exit
 from threading import Thread
 from queue import Queue, Empty
@@ -18,7 +18,7 @@ from hashlib import sha1
 from urllib.request import urlopen
 from urllib.error import URLError
 from json import load as jsonify
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, DEVNULL
 from struct import unpack_from
 from re import search
 from shutil import move, rmtree, copyfile, copyfileobj
@@ -26,6 +26,8 @@ from distutils.dir_util import copy_tree, _path_created
 
 
 ####################################################################################################
+# Thread-safe text class
+
 class ThreadSafeText(Text):
     def __init__(self, master, **options):
         Text.__init__(self, master, **options)
@@ -49,6 +51,7 @@ class ThreadSafeText(Text):
 
 
 ####################################################################################################
+# Main application class
 
 class Application(Frame):
     def __init__(self, master=None):
@@ -722,18 +725,10 @@ class Application(Frame):
         # Check if unlaunch was installed on the NAND dump
         tmd = path.join(self.sd_path, 'title', '00030017', app, 'content', 'title.tmd')
 
-        # If it is installed, set the title.tmd file as read-write
+        # If it is installed, set the files in the content folder as read-write
         if path.getsize(tmd) > 520:
             self.log.write('- WARNING: Unlaunch installed on the NAND dump')
-
-            if sysname == 'Darwin':
-                Popen([ 'chflags', 'nouchg', tmd ]).wait()
-
-            elif sysname == 'Linux':
-                Popen([ fatattr, '-R', tmd ]).wait()
-
-            else:
-                chmod(tmd, 438)
+            self.content_rw(path.join(self.sd_path, 'title', '00030017', app, 'content'))
 
         # Delete title.tmd in case it does not get overwritten
         remove(tmd)
@@ -793,7 +788,14 @@ class Application(Frame):
         self.log.write('\nCopying HiyaCFW files...')
 
         copy_tree('for SDNAND SD card', self.sd_path, update=1)
+
         move('bootloader.nds', path.join(self.sd_path, 'hiya', 'bootloader.nds'))
+
+        # Check if exists before moving it
+        if (path.exists(launcher_path)):
+            # If exists then remove it to avoid move error
+            remove(launcher_path)
+
         move('00000002.app', launcher_path)
 
         Thread(target=self.get_latest_twilight if self.twilight.get() == 1 else self.clean).start()
@@ -857,10 +859,10 @@ class Application(Frame):
         twlcfg1 = path.join(self.sd_path, 'shared1', 'TWLCFG1.dat')
 
         if sysname == 'Darwin':
-            Popen([ 'chflags', 'uchg', twlcfg0, twlcfg1 ]).wait()
+            Popen([ 'chflags', 'uchg', twlcfg0, twlcfg1 ], stdout=DEVNULL, stderr=DEVNULL).wait()
 
         elif sysname == 'Linux':
-            Popen([ fatattr, '+R', twlcfg0, twlcfg1 ]).wait()
+            Popen([ fatattr, '+R', twlcfg0, twlcfg1 ], stdout=DEVNULL, stderr=DEVNULL).wait()
 
         else:
             chmod(twlcfg0, 292)
@@ -905,14 +907,15 @@ class Application(Frame):
 
             # Change owner of the file in Linux
             if sysname == 'Linux':
-                Popen([ 'chown', '-R', ug + ':' + ug, file ]).wait()
+                Popen([ 'chown', '-R', ug + ':' + ug, file ], stdout=DEVNULL, stderr=DEVNULL).wait()
 
             self.log.write('\nDone!\nModified NAND stored as\n' + file)
             return
 
         # Change owner of the out folder in Linux
         if sysname == 'Linux':
-            Popen([ 'chown', '-R', ug + ':' + ug, self.sd_path ]).wait()
+            Popen([ 'chown', '-R', ug + ':' + ug, self.sd_path ],
+                stdout=DEVNULL, stderr=DEVNULL).wait()
 
         self.log.write('Done!\nEject your SD card and insert it into your DSi')
 
@@ -1048,10 +1051,11 @@ class Application(Frame):
                         file = path.join(self.mounted, 'title', '00030017', app, 'content', file)
 
                         if sysname == 'Darwin':
-                            Popen([ 'chflags', 'uchg', file ]).wait()
+                            Popen([ 'chflags', 'uchg', file ],
+                                stdout=DEVNULL, stderr=DEVNULL).wait()
 
                         elif sysname == 'Linux':
-                            Popen([ fatattr, '+R', file ]).wait()
+                            Popen([ fatattr, '+R', file ], stdout=DEVNULL, stderr=DEVNULL).wait()
 
                         else:
                             chmod(file, 292)
@@ -1077,22 +1081,27 @@ class Application(Frame):
             self.suffix = '-no-unlaunch'
 
             # Set files as read-write
-            for file in listdir(path.join(self.mounted, 'title', '00030017', app, 'content')):
-                file = path.join(self.mounted, 'title', '00030017', app, 'content', file)
-
-                if sysname == 'Darwin':
-                    Popen([ 'chflags', 'nouchg', file ]).wait()
-
-                elif sysname == 'Linux':
-                    Popen([ fatattr, '-R', file ]).wait()
-
-                else:
-                    chmod(file, 438)
+            self.content_rw(path.join(self.mounted, 'title', '00030017', app, 'content'))
 
             with open(tmd, 'r+b') as f:
                 f.truncate(520)
 
         Thread(target=self.unmount_nand).start()
+
+
+    ################################################################################################
+    def content_rw(self, _dir):
+        for file in listdir(_dir):
+            file = path.join(_dir, file)
+
+            if sysname == 'Darwin':
+                Popen([ 'chflags', 'nouchg', file ], stdout=DEVNULL, stderr=DEVNULL).wait()
+
+            elif sysname == 'Linux':
+                Popen([ fatattr, '-R', file ], stdout=DEVNULL, stderr=DEVNULL).wait()
+
+            else:
+                chmod(file, 438)
 
 
     ################################################################################################
@@ -1142,7 +1151,7 @@ class Application(Frame):
 
                 ug = getlogin()
 
-                Popen([ 'chown', '-R', ug + ':' + ug, file ]).wait()
+                Popen([ 'chown', '-R', ug + ':' + ug, file ], stdout=DEVNULL, stderr=DEVNULL).wait()
 
             self.log.write('\nDone!\nModified NAND stored as\n' + file +
                 '\nStored footer info in ' + self.console_id.get() + '-info.txt')
@@ -1193,18 +1202,20 @@ class Application(Frame):
 
 
 ####################################################################################################
+# Entry point
 
 sysname = system()
 
 root = Tk()
 
-twltool = path.join(sysname, 'twltool')
+twltool = path.join(sysname, 'twltool' + ('.exe' if sysname == 'Windows' else ''))
 
 if not path.exists(twltool):
     root.withdraw()
     showerror('Error', 'TWLTool not found. Please make sure the ' + sysname +
-        ' folder is at the same location as this script, or run it again from the terminal:' +
-        "\n\n$ " + ('sudo ' if sysname == 'Linux' else '') + './HiyaCFW_Helper.py')
+        ' folder is at the same location as this script' + ('.' if sysname == 'Windows'
+        else ", or run it again from the terminal:\n\n$ " +
+        ('sudo ' if sysname == 'Linux' else '') + './HiyaCFW_Helper.py'))
     root.destroy()
     exit(1)
 
