@@ -100,15 +100,11 @@ class Application(Frame):
         self.nand_operation = IntVar()
         self.nand_operation.set(0)
 
-        Radiobutton(self.nand_frame, text='Uninstall unlaunch or install v1.4 stable',
-            variable=self.nand_operation, value=0,
-            command=lambda: self.enable_entries(False)).pack(anchor=W)
-
         Radiobutton(self.nand_frame, text='Remove No$GBA footer', variable=self.nand_operation,
-            value=1, command=lambda: self.enable_entries(False)).pack(anchor=W)
+            value=0, command=lambda: self.enable_entries(False)).pack(anchor=W)
 
         Radiobutton(self.nand_frame, text='Add No$GBA footer', variable=self.nand_operation,
-            value=2, command=lambda: self.enable_entries(True)).pack(anchor=W)
+            value=1, command=lambda: self.enable_entries(True)).pack(anchor=W)
 
         fl = Frame(self.nand_frame)
 
@@ -193,7 +189,7 @@ class Application(Frame):
                 return
 
         # If adding a No$GBA footer, check if CID and ConsoleID values are OK
-        elif self.nand_operation.get() == 2:
+        elif self.nand_operation.get() == 1:
             cid = self.cid.get()
             console_id = self.console_id.get()
 
@@ -251,7 +247,7 @@ class Application(Frame):
             (width / 2), root.winfo_y() + (root.winfo_height() / 2) - (height / 2)))
 
         # Check if we'll be adding a No$GBA footer
-        if self.nand_mode and self.nand_operation.get() == 2:
+        if self.nand_mode and self.nand_operation.get() == 1:
             Thread(target=self.add_footer, args=(cid, console_id)).start()
 
         else:
@@ -281,14 +277,9 @@ class Application(Frame):
                     self.console_id.set(bytearray(reversed(bstr)).hex().upper())
                     self.log.write('- Console ID: ' + self.console_id.get())
 
-                    # Check we are making an unlaunch operation or removing the No$GBA footer
+                    # Check we are removing the No$GBA footer
                     if self.nand_mode:
-                        if self.nand_operation.get() == 0:
-                            Thread(target=self.decrypt_nand).start()
-
-                        else:
-                            Thread(target=self.remove_footer).start()
-                            pass
+                        Thread(target=self.remove_footer).start()
 
                     else:
                         Thread(target=self.get_latest_hiyacfw).start()
@@ -515,8 +506,7 @@ class Application(Frame):
             print("\n")
 
             if ret_val == 0:
-                if not self.nand_mode:
-                    self.files.append(self.console_id.get() + '.img')
+                self.files.append(self.console_id.get() + '.img')
 
                 Thread(target=self.win_extract_nand if sysname == 'Windows'
                     else self.mount_nand).start()
@@ -571,11 +561,8 @@ class Application(Frame):
 
         try:
             if sysname == 'Darwin':
-                cmd = [ 'hdiutil', 'attach', '-imagekey', 'diskimage-class=CRawDiskImage',
-                    '-nomount', self.console_id.get() + '.img' ]
-
-                if not self.nand_mode:
-                    cmd.insert(2, '-readonly')
+                cmd = [ 'hdiutil', 'attach', '-readonly', '-imagekey',
+                    'diskimage-class=CRawDiskImage', '-nomount', self.console_id.get() + '.img' ]
 
                 proc = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
 
@@ -585,10 +572,7 @@ class Application(Frame):
                     self.raw_disk = search(r'^\/dev\/disk\d+', outs.decode('utf-8')).group(0)
                     self.log.write('- Mounted raw disk on ' + self.raw_disk)
 
-                    cmd = [ 'hdiutil', 'mount', self.raw_disk + 's1' ]
-
-                    if not self.nand_mode:
-                        cmd.insert(2, '-readonly')
+                    cmd = [ 'hdiutil', 'mount', '-readonly', self.raw_disk + 's1' ]
 
                     proc = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
 
@@ -609,10 +593,7 @@ class Application(Frame):
                     return
 
             else:  # Linux
-                cmd = [ 'losetup', '-P', '-f', '--show', self.console_id.get() + '.img' ]
-
-                if not self.nand_mode:
-                    cmd.insert(2, '-r')
+                cmd = [ 'losetup', '-P', '-r', '-f', '--show', self.console_id.get() + '.img' ]
 
                 proc = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
                 outs, errs = proc.communicate()
@@ -623,10 +604,7 @@ class Application(Frame):
 
                     self.mounted = '/mnt'
 
-                    cmd = [ 'mount', '-t', 'vfat', self.loop_dev + 'p1', self.mounted ]
-
-                    if not self.nand_mode:
-                        cmd.insert(1, '-r')
+                    cmd = [ 'mount', '-r', '-t', 'vfat', self.loop_dev + 'p1', self.mounted ]
 
                     proc = Popen(cmd)
 
@@ -645,8 +623,7 @@ class Application(Frame):
                     Thread(target=self.clean, args=(True,)).start()
                     return
 
-            # Check we are making an unlaunch operation
-            Thread(target=self.unlaunch_proc if self.nand_mode else self.extract_nand).start()
+            Thread(target=self.extract_nand).start()
 
         except OSError as e:
             print(e)
@@ -729,7 +706,20 @@ class Application(Frame):
         # If it is installed, set the files in the content folder as read-write
         if path.getsize(tmd) > 520:
             self.log.write('- WARNING: Unlaunch installed on the NAND dump')
-            self.content_rw(path.join(self.sd_path, 'title', '00030017', app, 'content'))
+
+            _dir = path.join(self.sd_path, 'title', '00030017', app, 'content')
+
+            for file in listdir(_dir):
+                file = path.join(_dir, file)
+
+                if sysname == 'Darwin':
+                    Popen([ 'chflags', 'nouchg', file ], stdout=DEVNULL, stderr=DEVNULL).wait()
+
+                elif sysname == 'Linux':
+                    Popen([ fatattr, '-R', file ], stdout=DEVNULL, stderr=DEVNULL).wait()
+
+                else:
+                    chmod(file, 438)
 
         # Delete title.tmd in case it does not get overwritten
         remove(tmd)
@@ -1007,105 +997,6 @@ class Application(Frame):
             self.log.write('ERROR: ' + e.strerror + ': ' + e.filename)
 
         return False
-
-
-    ################################################################################################
-    def unlaunch_proc(self):
-        self.log.write('\nChecking unlaunch status...')
-
-        app = self.detect_region()
-
-        # Stop if no supported region was found
-        if not app:
-            # TODO: Unmount NAND
-            return
-
-        tmd = path.join(self.mounted, 'title', '00030017', app, 'content', 'title.tmd')
-
-        tmd_size = path.getsize(tmd)
-
-        if tmd_size == 520:
-            self.log.write('- Not installed. Downloading v1.4...')
-
-            try:
-                filename = 'unlau14.zip'
-                with urlopen('http://problemkaputt.de'
-                    '/unlau14.zip') as src, open(filename, 'wb') as dst:
-                    copyfileobj(src, dst)
-
-                proc = Popen([ _7z, 'x', '-bso0', '-y', filename, 'UNLAUNCH.DSI' ])
-
-                ret_val = proc.wait()
-
-                if ret_val == 0:
-                    self.files.append(filename)
-                    self.files.append('UNLAUNCH.DSI')
-
-                    self.log.write('- Installing unlaunch...')
-
-                    self.suffix = '-unlaunch'
-
-                    with open(tmd, 'ab') as f:
-                        with open('UNLAUNCH.DSI', 'rb') as unl:
-                            f.write(unl.read())
-
-                    # Set files as read-only
-                    for file in listdir(path.join(self.mounted, 'title', '00030017', app,
-                        'content')):
-                        file = path.join(self.mounted, 'title', '00030017', app, 'content', file)
-
-                        if sysname == 'Darwin':
-                            Popen([ 'chflags', 'uchg', file ],
-                                stdout=DEVNULL, stderr=DEVNULL).wait()
-
-                        elif sysname == 'Linux':
-                            Popen([ fatattr, '+R', file ], stdout=DEVNULL, stderr=DEVNULL).wait()
-
-                        else:
-                            chmod(file, 292)
-
-                else:
-                    self.log.write('ERROR: Extractor failed')
-                    # TODO: Unmount NAND
-
-
-            except IOError as e:
-                print(e)
-                self.log.write('ERROR: Could not get unlaunch')
-                # TODO: Unmount NAND
-
-            except OSError as e:
-                print(e)
-                self.log.write('ERROR: Could not execute ' + exe)
-                # TODO: Unmount NAND
-
-        else:
-            self.log.write('- Installed. Uninstalling...')
-
-            self.suffix = '-no-unlaunch'
-
-            # Set files as read-write
-            self.content_rw(path.join(self.mounted, 'title', '00030017', app, 'content'))
-
-            with open(tmd, 'r+b') as f:
-                f.truncate(520)
-
-        Thread(target=self.unmount_nand).start()
-
-
-    ################################################################################################
-    def content_rw(self, _dir):
-        for file in listdir(_dir):
-            file = path.join(_dir, file)
-
-            if sysname == 'Darwin':
-                Popen([ 'chflags', 'nouchg', file ], stdout=DEVNULL, stderr=DEVNULL).wait()
-
-            elif sysname == 'Linux':
-                Popen([ fatattr, '-R', file ], stdout=DEVNULL, stderr=DEVNULL).wait()
-
-            else:
-                chmod(file, 438)
 
 
     ################################################################################################

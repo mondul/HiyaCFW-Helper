@@ -16,7 +16,7 @@ In order to make things easier for me, and because I don't have Windows, I edite
 * (Optional) installs the latest release of TWiLightMenu++ on the chosen output destination.
 
 ### _NAND mode:_
-Clicking on the integrated circuit button will give you a NAND mode, where you can uninstall unlaunch or install its v1.4 stable release, remove the No$GBA footer or add it. Recommended only for those with a hardmod.
+Clicking on the integrated circuit button will give you a NAND mode, where you can remove the No$GBA footer or add it.
 
 ## Requirements:
 ### _Windows:_
