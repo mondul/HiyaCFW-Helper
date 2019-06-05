@@ -11,7 +11,7 @@ In order to make things easier for me, and because I don't have Windows, I edite
 * Autodetects the console region from the NAND dump, downloads and decrypts its v512 launcher.
 * Creates the patched _00000002.app_ and _bootloader.nds_ for the custom firmware.
 * Uses your platform's twltool (binaries for Linux and MacOS included) to decrypt the NAND.
-* Mounts the decrypted NAND (on Linux and MacOS) and extracts it to the chosen output destination (7-Zip required for Windows).
+* Extracts the decrypted NAND to the chosen output destination (7-Zip required for Windows).
 * Installs the HiyaCFW and the patched files on the chosen output destination.
 * (Optional) installs the latest release of TWiLightMenu++ on the chosen output destination.
 
@@ -24,7 +24,6 @@ Clicking on the integrated circuit button will give you a NAND mode, where you c
 
 ### _Linux:_
 * Python 3.6 or greater with the Tk library (I had to do `sudo apt-get install python3-tk -y` in my Ubuntu virtual machine, `sudo dnf install python3-tkinter` in Fedora, `sudo pacman -S tk` in Arch Linux). You might need to install the Python 3 distutils package also.
-* You will need to run the script as sudo in order to mount the decrypted NAND.
 
 ### _MacOS:_
 * Python 3.6 or greater, you can install it with one of these options:
@@ -36,6 +35,7 @@ Clicking on the integrated circuit button will give you a NAND mode, where you c
 * twltool binaries for Windows, Linux and MacOS. Compiled from the [WinterMute's GitHub repo](https://github.com/WinterMute/twltool).
 * NDS bootloader creator binaries for Linux and MacOS (based off devkitPro's ndstool v1.27). Compiled from [my GitHub repo](https://github.com/mondul/NDS-Bootloader-Creator). For Windows the ndstool included with HiyaCFW is used.
 * fatattr binary for Linux. It's used for setting FAT attributes when writing to the FAT formatted SD card or in NAND mode. Compiled from the [Terseus' GitHub repo](https://github.com/Terseus/fatattr).
+* fatcat binaries for Linux and MacOS. Compiled from the [Gregwar's GitHub repo](https://github.com/Gregwar/fatcat).
 
 ## How to use it:
 ### _Windows:_
@@ -45,7 +45,7 @@ Clicking on the integrated circuit button will give you a NAND mode, where you c
 ### _Linux:_
 * Open a terminal.
 * _cd_ to the helper's folder (`cd ~/Downloads/HiyaCFW-Helper` or whatever).
-* Run `sudo ./HiyaCFW_Helper.py`.
+* Run `./HiyaCFW_Helper.py`.
 
 ### _MacOS:_
 * Open a Terminal (⌘+Space and write _terminal_).
