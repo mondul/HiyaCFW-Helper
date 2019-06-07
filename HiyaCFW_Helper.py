@@ -17,7 +17,7 @@ from queue import Queue, Empty
 from hashlib import sha1
 from urllib.request import urlopen
 from urllib.error import URLError
-from json import load as jsonify
+from json import loads as jsonify
 from subprocess import Popen, DEVNULL
 from struct import unpack_from
 from shutil import rmtree, copyfile, copyfileobj
@@ -305,7 +305,7 @@ class Application(Frame):
                 self.log.write('\nDownloading latest HiyaCFW release...')
 
                 conn = urlopen('https://api.github.com/repos/RocketRobz/hiyaCFW/releases/latest')
-                latest = jsonify(conn)
+                latest = jsonify(conn.read().decode('utf-8'))
                 conn.close()
 
                 with urlopen(latest['assets'][0]
@@ -688,7 +688,7 @@ class Application(Frame):
 
             conn = urlopen('https://api.github.com/repos/DS-Homebrew/TWiLightMenu/releases/'
                 'latest')
-            latest = jsonify(conn)
+            latest = jsonify(conn.read().decode('utf-8'))
             conn.close()
 
             with urlopen(latest['assets'][0]
