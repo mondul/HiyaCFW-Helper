@@ -327,7 +327,7 @@ class Application(Frame):
                     else self.extract_bios).start()
 
             else:
-                self.log.write('ERROR: Extractor failed')
+                self.log.write('ERROR: Extractor failed. Try installing/updating 7zip.')
 
         except (URLError, IOError) as e:
             print(e)
