@@ -459,7 +459,7 @@ class Application(Frame):
     def make_bootloader(self):
         self.log.write('\nGenerating new bootloader...')
 
-        exe = (path.join('for PC', 'bootloader files', 'ndstool') if sysname == 'Windows' else
+        exe = (path.join('for PC', 'bootloader files', 'ndstool.exe') if sysname == 'Windows' else
             path.join(sysname, 'ndsblc'))
 
         try:
@@ -902,21 +902,11 @@ print('Opening HiyaCFW Helper...')
 
 sysname = system()
 
-twltool = path.join(sysname, 'twltool' + ('.exe' if sysname == 'Windows' else ''))
-
 print('Initializing GUI...')
 
 root = Tk()
 
-if not path.exists(twltool):
-    root.withdraw()
-    showerror('Error', 'TWLTool not found. Please make sure the ' + sysname +
-        ' folder is at the same location as this script' + ('.' if sysname == 'Windows'
-        else ", or run it again from the terminal:\n\n$ ./HiyaCFW_Helper.py"))
-    root.destroy()
-    exit(1)
-
-elif sysname == 'Windows':
+if sysname == 'Windows':
     from winreg import OpenKey, QueryValueEx, HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_64KEY
 
     print('Searching for 7-Zip in the Windows registry...')
@@ -944,7 +934,19 @@ elif sysname == 'Windows':
             root.destroy()
             exit(1)
 
+    twltool = path.join('for PC', 'twltool.exe')
+
 else:   # Linux and MacOS
+    twltool = path.join(sysname, 'twltool')
+
+    if not path.exists(twltool):
+        root.withdraw()
+        showerror('Error', 'TWLTool not found. Please make sure the ' + sysname +
+            ' folder is at the same location as this script, or run it again from the terminal:' +
+            "\n\n$ ./HiyaCFW_Helper.py")
+        root.destroy()
+        exit(1)
+
     fatcat = path.join(sysname, 'fatcat')
     _7z = path.join(sysname, '7za')
 
