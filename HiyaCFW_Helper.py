@@ -540,7 +540,7 @@ class Application(Frame):
                     Thread(target=self.get_launcher).start()
 
                 else:
-                    self.log.write('ERROR: Extractor failed')
+                    self.log.write('ERROR: Extractor failed, please update 7-Zip')
                     Thread(target=self.clean, args=(True,)).start()
 
             else:
