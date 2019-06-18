@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # HiyaCFW Helper
-# Version 3.3
+# Version 3.4
 # Author: mondul <mondul@huyzona.com>
 
 from tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutton, Radiobutton,
@@ -10,7 +10,7 @@ from tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutt
 from tkinter.messagebox import askokcancel, showerror, showinfo, WARNING
 from tkinter.filedialog import askopenfilename, askdirectory
 from platform import system
-from os import path, remove, chmod, rename, listdir
+from os import path, remove, chmod, listdir
 from sys import exit
 from threading import Thread
 from queue import Queue, Empty
@@ -18,7 +18,7 @@ from hashlib import sha1
 from urllib.request import urlopen
 from urllib.error import URLError
 from json import loads as jsonify
-from subprocess import Popen, DEVNULL
+from subprocess import Popen
 from struct import unpack_from
 from shutil import rmtree, copyfile, copyfileobj
 from distutils.dir_util import copy_tree, _path_created
@@ -586,29 +586,20 @@ class Application(Frame):
             Thread(target=self.clean, args=(True,)).start()
             return
 
-        # Check if unlaunch was installed on the NAND dump
-        tmd = path.join(self.sd_path, 'title', '00030017', app, 'content', 'title.tmd')
+        # Delete contents of the launcher folder as it will be replaced by the one from HiyaCFW
+        launcher_folder = path.join(self.sd_path, 'title', '00030017', app, 'content')
 
-        # If it is installed, set the files in the content folder as read-write
-        if path.getsize(tmd) > 520:
-            self.log.write('- WARNING: Unlaunch installed on the NAND dump')
+        # Walk through all files in the launcher content folder
+        for file in listdir(launcher_folder):
+            file = path.join(launcher_folder, file)
 
-            _dir = path.join(self.sd_path, 'title', '00030017', app, 'content')
+            # Set current file as read/write in case we are in Windows and unlaunch was installed
+            # in the NAND. For Linux and MacOS fatcat doesn't keep file attributes
+            if sysname == 'Windows':
+                chmod(file, 438)
 
-            for file in listdir(_dir):
-                file = path.join(_dir, file)
-
-                if sysname == 'Darwin':
-                    Popen([ 'chflags', 'nouchg', file ], stdout=DEVNULL, stderr=DEVNULL).wait()
-
-                elif sysname == 'Linux':
-                    Popen([ fatattr, '-R', file ], stdout=DEVNULL, stderr=DEVNULL).wait()
-
-                else:
-                    chmod(file, 438)
-
-        # Delete title.tmd in case it does not get overwritten
-        remove(tmd)
+            # Delete current file
+            remove(file)
 
         # Try to use already downloaded launcher
         try:
@@ -643,8 +634,7 @@ class Application(Frame):
                 self.log.write('- Patched launcher SHA1:\n  ' +
                     sha1_hash.digest().hex().upper())
 
-                Thread(target=self.install_hiyacfw, args=(path.join(self.sd_path, 'title',
-                    '00030017', app, 'content', '00000002.app'),)).start()
+                Thread(target=self.install_hiyacfw, args=(launcher_folder,)).start()
 
             else:
                 self.log.write('ERROR: Extractor failed')
@@ -662,19 +652,15 @@ class Application(Frame):
 
 
     ################################################################################################
-    def install_hiyacfw(self, launcher_path):
+    def install_hiyacfw(self, launcher_folder):
         self.log.write('\nCopying HiyaCFW files...')
 
+        # Reset copied files cache
+        _path_created.clear()
+
         copy_tree('for SDNAND SD card', self.sd_path, update=1)
-
         copyfile('bootloader.nds', path.join(self.sd_path, 'hiya', 'bootloader.nds'))
-
-        # Check if exists before moving it
-        if (path.exists(launcher_path)):
-            # If exists then remove it to avoid move error
-            remove(launcher_path)
-
-        copyfile('00000002.app', launcher_path)
+        copyfile('00000002.app', path.join(launcher_folder, '00000002.app'))
 
         Thread(target=self.get_latest_twilight if self.twilight.get() == 1 else self.clean).start()
 
@@ -733,20 +719,6 @@ class Application(Frame):
         copy_tree('_nds', path.join(self.sd_path, '_nds'))
         copy_tree('DSi&3DS - SD card users', self.sd_path, update=1)
         copy_tree('roms', path.join(self.sd_path, 'roms'))
-
-        # Set files as read-only
-        twlcfg0 = path.join(self.sd_path, 'shared1', 'TWLCFG0.dat')
-        twlcfg1 = path.join(self.sd_path, 'shared1', 'TWLCFG1.dat')
-
-        if sysname == 'Darwin':
-            Popen([ 'chflags', 'uchg', twlcfg0, twlcfg1 ], stdout=DEVNULL, stderr=DEVNULL).wait()
-
-        elif sysname == 'Linux':
-            Popen([ fatattr, '+R', twlcfg0, twlcfg1 ], stdout=DEVNULL, stderr=DEVNULL).wait()
-
-        else:
-            chmod(twlcfg0, 292)
-            chmod(twlcfg1, 292)
 
         Thread(target=self.clean).start()
 
@@ -834,11 +806,9 @@ class Application(Frame):
         }
 
         # Autodetect console region
-        base = self.mounted if self.nand_mode else self.sd_path
-
         try:
-            for app in listdir(path.join(base, 'title', '00030017')):
-                for file in listdir(path.join(base, 'title', '00030017', app, 'content')):
+            for app in listdir(path.join(self.sd_path, 'title', '00030017')):
+                for file in listdir(path.join(self.sd_path, 'title', '00030017', app, 'content')):
                     if file.endswith('.app'):
                         try:
                             self.log.write('- Detected ' + REGION_CODES[app] + ' console NAND dump')
@@ -855,27 +825,6 @@ class Application(Frame):
             self.log.write('ERROR: ' + e.strerror + ': ' + e.filename)
 
         return False
-
-
-    ################################################################################################
-    def encrypt_nand(self):
-        self.log.write('\nEncrypting back NAND...')
-
-        try:
-            proc = Popen([ twltool, 'nandcrypt', '--in', self.console_id.get() + '.img' ])
-
-            ret_val = proc.wait()
-            print("\n")
-
-            if ret_val == 0:
-                Thread(target=self.clean).start()
-
-            else:
-                self.log.write('ERROR: Encryptor failed')
-
-        except OSError as e:
-            print(e)
-            self.log.write('ERROR: Could not execute ' + exe)
 
 
     ################################################################################################
@@ -999,10 +948,7 @@ else:   # Linux and MacOS
     fatcat = path.join(sysname, 'fatcat')
     _7z = path.join(sysname, '7za')
 
-    if sysname == 'Linux':
-        fatattr = path.join('Linux', 'fatattr')
-
-root.title('HiyaCFW Helper v3.3')
+root.title('HiyaCFW Helper v3.4')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window
