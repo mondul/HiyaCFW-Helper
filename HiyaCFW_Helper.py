@@ -678,7 +678,7 @@ class Application(Frame):
             latest = jsonify(conn.read().decode('utf-8'))
             conn.close()
 
-            with urlopen(latest['assets'][0]
+            with urlopen(latest['assets'][1]
                 ['browser_download_url']) as src, open(filename, 'wb') as dst:
                 copyfileobj(src, dst)
 
@@ -802,6 +802,7 @@ class Application(Frame):
         REGION_CODES = {
             '484e4145': 'USA',
             '484e414a': 'JAP',
+            '484e414b': 'KOR',
             '484e4150': 'EUR',
             '484e4155': 'AUS'
         }
