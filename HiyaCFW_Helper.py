@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # HiyaCFW Helper
-# Version 3.4
+# Version 3.4.1
 # Author: mondul <mondul@huyzona.com>
 
 from tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutton, Radiobutton,
@@ -952,7 +952,7 @@ else:   # Linux and MacOS
     fatcat = path.join(sysname, 'fatcat')
     _7z = path.join(sysname, '7za')
 
-root.title('HiyaCFW Helper v3.4')
+root.title('HiyaCFW Helper v3.4.1')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window
