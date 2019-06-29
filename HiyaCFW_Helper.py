@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # HiyaCFW Helper
-# Version 3.4.1
+# Version 3.4
 # Author: mondul <mondul@huyzona.com>
 
 from tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutton, Radiobutton,
@@ -17,6 +16,7 @@ from threading import Thread
 from queue import Queue, Empty
 from hashlib import sha1
 from urllib.request import urlopen
+from urllib.request import urlretrieve
 from urllib.error import URLError
 from json import loads as jsonify
 from subprocess import Popen
@@ -673,15 +673,14 @@ class Application(Frame):
         try:
             self.log.write('\nDownloading latest TWiLight Menu++ release...')
 
-            conn = urlopen('https://api.github.com/repos/DS-Homebrew/TWiLightMenu/releases/'
-                'latest')
-            latest = jsonify(conn.read().decode('utf-8'))
-            conn.close()
+            #conn = urlopen('https://api.github.com/repos/DS-Homebrew/TWiLightMenu/releases/'
+            #    'latest')
+            #latest = jsonify(conn.read().decode('utf-8'))
+            #conn.close()
 
-            with urlopen(latest['assets'][1]
-                ['browser_download_url']) as src, open(filename, 'wb') as dst:
+            with urlopen('https://github.com/DS-Homebrew/TWiLightMenu/releases/latest/download/TWiLightMenu.7z') as src, open(filename, 'wb') as dst:
                 copyfileobj(src, dst)
-
+        
             self.log.write('- Extracting ' + filename[:-3] + ' archive...')
 
             proc = Popen([ _7z, 'x', '-bso0', '-y', filename, '_nds', 'DSi - CFW users',
@@ -802,7 +801,6 @@ class Application(Frame):
         REGION_CODES = {
             '484e4145': 'USA',
             '484e414a': 'JAP',
-            '484e414b': 'KOR',
             '484e4150': 'EUR',
             '484e4155': 'AUS'
         }
@@ -952,7 +950,7 @@ else:   # Linux and MacOS
     fatcat = path.join(sysname, 'fatcat')
     _7z = path.join(sysname, '7za')
 
-root.title('HiyaCFW Helper v3.4.1')
+root.title('HiyaCFW Helper v3.4')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window
