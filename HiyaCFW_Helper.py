@@ -18,7 +18,6 @@ from queue import Queue, Empty
 from hashlib import sha1
 from urllib.request import urlopen
 from urllib.error import URLError
-from json import loads as jsonify
 from subprocess import Popen
 from struct import unpack_from
 from shutil import rmtree, copyfile, copyfileobj
@@ -305,12 +304,8 @@ class Application(Frame):
             else:
                 self.log.write('\nDownloading latest HiyaCFW release...')
 
-                conn = urlopen('https://api.github.com/repos/RocketRobz/hiyaCFW/releases/latest')
-                latest = jsonify(conn.read().decode('utf-8'))
-                conn.close()
-
-                with urlopen(latest['assets'][0]
-                    ['browser_download_url']) as src, open(filename, 'wb') as dst:
+                with urlopen('https://github.com/RocketRobz/hiyaCFW/releases/latest/download/' +
+                    filename) as src, open(filename, 'wb') as dst:
                     copyfileobj(src, dst)
 
             self.log.write('- Extracting HiyaCFW archive...')
@@ -673,13 +668,8 @@ class Application(Frame):
         try:
             self.log.write('\nDownloading latest TWiLight Menu++ release...')
 
-            conn = urlopen('https://api.github.com/repos/DS-Homebrew/TWiLightMenu/releases/'
-                'latest')
-            latest = jsonify(conn.read().decode('utf-8'))
-            conn.close()
-
-            with urlopen(latest['assets'][1]
-                ['browser_download_url']) as src, open(filename, 'wb') as dst:
+            with urlopen('https://github.com/DS-Homebrew/TWiLightMenu/releases/latest/download/' +
+                filename) as src, open(filename, 'wb') as dst:
                 copyfileobj(src, dst)
 
             self.log.write('- Extracting ' + filename[:-3] + ' archive...')
