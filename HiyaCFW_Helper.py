@@ -663,14 +663,19 @@ class Application(Frame):
 
     ################################################################################################
     def get_latest_twilight(self):
+        # Try to use already downloaded TWiLight Menu++ archive
         filename = 'TWiLightMenu.7z'
 
         try:
-            self.log.write('\nDownloading latest TWiLight Menu++ release...')
+            if path.isfile(filename):
+                self.log.write('\nPreparing TWiLight Menu++...')
 
-            with urlopen('https://github.com/DS-Homebrew/TWiLightMenu/releases/latest/download/' +
-                filename) as src, open(filename, 'wb') as dst:
-                copyfileobj(src, dst)
+            else:
+                self.log.write('\nDownloading latest TWiLight Menu++ release...')
+
+                with urlopen('https://github.com/DS-Homebrew/TWiLightMenu/releases/latest/download/' +
+                    filename) as src, open(filename, 'wb') as dst:
+                    copyfileobj(src, dst)
 
             self.log.write('- Extracting ' + filename[:-3] + ' archive...')
 
