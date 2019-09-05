@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # HiyaCFW Helper
-# Version 3.4.1
+# Version 3.5
 # Author: mondul <mondul@huyzona.com>
 
 from tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutton, Radiobutton,
@@ -612,25 +612,37 @@ class Application(Frame):
 
             self.log.write('- Decrypting launcher...')
 
-            proc = Popen([ _7z, 'x', '-bso0', '-y', '-p' + app, self.launcher_region,
-                '00000002.app' ])
+            # Set launcher filename according to the region
+            launcher_app = ('00000000.app' if self.launcher_region in ('CHN', 'KOR')
+                else '00000002.app')
+
+            # Prepare decryption params
+            params = [ _7z, 'x', '-bso0', '-y', '-p' + app, self.launcher_region, launcher_app ]
+
+            if launcher_app == '00000000.app':
+                params.append('title.tmd')
+
+            proc = Popen(params)
 
             ret_val = proc.wait()
 
             if ret_val == 0:
                 self.files.append(self.launcher_region)
-                self.files.append('00000002.app')
+                self.files.append(launcher_app)
+
+                if launcher_app == '00000000.app':
+                    self.files.append('title.tmd')
 
                 # Hash 00000002.app
                 sha1_hash = sha1()
 
-                with open('00000002.app', 'rb') as f:
+                with open(launcher_app, 'rb') as f:
                     sha1_hash.update(f.read())
 
                 self.log.write('- Patched launcher SHA1:\n  ' +
                     sha1_hash.digest().hex().upper())
 
-                Thread(target=self.install_hiyacfw, args=(launcher_folder,)).start()
+                Thread(target=self.install_hiyacfw, args=(launcher_app, launcher_folder)).start()
 
             else:
                 self.log.write('ERROR: Extractor failed')
@@ -648,7 +660,7 @@ class Application(Frame):
 
 
     ################################################################################################
-    def install_hiyacfw(self, launcher_folder):
+    def install_hiyacfw(self, launcher_app, launcher_folder):
         self.log.write('\nCopying HiyaCFW files...')
 
         # Reset copied files cache
@@ -656,7 +668,10 @@ class Application(Frame):
 
         copy_tree('for SDNAND SD card', self.sd_path, update=1)
         copyfile('bootloader.nds', path.join(self.sd_path, 'hiya', 'bootloader.nds'))
-        copyfile('00000002.app', path.join(launcher_folder, '00000002.app'))
+        copyfile(launcher_app, path.join(launcher_folder, launcher_app))
+
+        if launcher_app == '00000000.app':
+            copyfile('title.tmd', path.join(launcher_folder, 'title.tmd'))
 
         Thread(target=self.get_latest_twilight if self.twilight.get() == 1 else self.clean).start()
 
@@ -795,6 +810,7 @@ class Application(Frame):
     ################################################################################################
     def detect_region(self):
         REGION_CODES = {
+            '484e4143': 'CHN',
             '484e4145': 'USA',
             '484e414a': 'JAP',
             '484e414b': 'KOR',
@@ -947,7 +963,7 @@ else:   # Linux and MacOS
     fatcat = path.join(sysname, 'fatcat')
     _7z = path.join(sysname, '7za')
 
-root.title('HiyaCFW Helper v3.4.1')
+root.title('HiyaCFW Helper v3.5')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window
