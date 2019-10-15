@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # HiyaCFW Helper
-# Version 3.5
+# Version 3.5.1
 # Author: mondul <mondul@huyzona.com>
 
 from tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutton, Radiobutton,
@@ -503,44 +503,10 @@ class Application(Frame):
             if ret_val == 0:
                 self.files.append(self.console_id.get() + '.img')
 
-                Thread(target=self.win_extract_nand if sysname == 'Windows'
-                    else self.extract_nand).start()
+                Thread(target=self.extract_nand).start()
 
             else:
                 self.log.write('ERROR: Decryptor failed')
-                Thread(target=self.clean, args=(True,)).start()
-
-        except OSError as e:
-            print(e)
-            self.log.write('ERROR: Could not execute ' + exe)
-            Thread(target=self.clean, args=(True,)).start()
-
-
-    ################################################################################################
-    def win_extract_nand(self):
-        self.log.write('\nExtracting files from NAND...')
-
-        try:
-            proc = Popen([ _7z, 'x', '-bso0', '-y', self.console_id.get() + '.img', '0.fat' ])
-
-            ret_val = proc.wait()
-
-            if ret_val == 0:
-                self.files.append('0.fat')
-
-                proc = Popen([ _7z, 'x', '-bso0', '-y', '-o' + self.sd_path, '0.fat' ])
-
-                ret_val = proc.wait()
-
-                if ret_val == 0:
-                    Thread(target=self.get_launcher).start()
-
-                else:
-                    self.log.write('ERROR: Extractor failed, please update 7-Zip')
-                    Thread(target=self.clean, args=(True,)).start()
-
-            else:
-                self.log.write('ERROR: Extractor failed')
                 Thread(target=self.clean, args=(True,)).start()
 
         except OSError as e:
@@ -919,51 +885,26 @@ print('Initializing GUI...')
 
 root = Tk()
 
+fatcat = path.join(sysname, 'fatcat')
+_7z = path.join(sysname, '7za')
+
 if sysname == 'Windows':
-    from winreg import OpenKey, QueryValueEx, HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_64KEY
-
-    print('Searching for 7-Zip in the Windows registry...')
-
-    try:
-        with OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE\\7-Zip', 0, KEY_READ | KEY_WOW64_64KEY) as hkey:
-            _7z = path.join(QueryValueEx(hkey, 'Path')[0], '7z.exe')
-
-            if not path.exists(_7z):
-                raise WindowsError
-
-    except WindowsError:
-        print('Searching for 7-Zip in the 32-bit Windows registry...')
-
-        try:
-            with OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE\\7-Zip') as hkey:
-                _7z = path.join(QueryValueEx(hkey, 'Path')[0], '7z.exe')
-
-                if not path.exists(_7z):
-                    raise WindowsError
-
-        except WindowsError:
-            root.withdraw()
-            showerror('Error', 'This script needs 7-Zip to run. Please install it.')
-            root.destroy()
-            exit(1)
-
+    fatcat += '.exe'
+    _7z += '.exe'
     twltool = path.join('for PC', 'twltool.exe')
 
 else:   # Linux and MacOS
     twltool = path.join(sysname, 'twltool')
 
-    if not path.exists(twltool):
-        root.withdraw()
-        showerror('Error', 'TWLTool not found. Please make sure the ' + sysname +
-            ' folder is at the same location as this script, or run it again from the terminal:' +
-            "\n\n$ ./HiyaCFW_Helper.py")
-        root.destroy()
-        exit(1)
+if not path.exists(fatcat):
+    root.withdraw()
+    showerror('Error', 'Fatcat not found. Please make sure the ' + sysname +
+        ' folder is at the same location as this script' + ('.' if sysname == 'Windows'
+        else ", or run it again from the terminal:\n\n$ ./HiyaCFW_Helper.py"))
+    root.destroy()
+    exit(1)
 
-    fatcat = path.join(sysname, 'fatcat')
-    _7z = path.join(sysname, '7za')
-
-root.title('HiyaCFW Helper v3.5')
+root.title('HiyaCFW Helper v3.5.1')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window
