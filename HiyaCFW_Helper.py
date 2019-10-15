@@ -11,7 +11,7 @@ from tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutt
 from tkinter.messagebox import askokcancel, showerror, showinfo, WARNING
 from tkinter.filedialog import askopenfilename, askdirectory
 from platform import system
-from os import path, remove, chmod, listdir
+from os import path, remove, listdir
 from sys import exit
 from threading import Thread
 from queue import Queue, Empty
@@ -551,17 +551,9 @@ class Application(Frame):
         # Delete contents of the launcher folder as it will be replaced by the one from HiyaCFW
         launcher_folder = path.join(self.sd_path, 'title', '00030017', app, 'content')
 
-        # Walk through all files in the launcher content folder
+        # Walk through all files in the launcher content folder and delete them
         for file in listdir(launcher_folder):
-            file = path.join(launcher_folder, file)
-
-            # Set current file as read/write in case we are in Windows and unlaunch was installed
-            # in the NAND. For Linux and MacOS fatcat doesn't keep file attributes
-            if sysname == 'Windows':
-                chmod(file, 438)
-
-            # Delete current file
-            remove(file)
+            remove(path.join(launcher_folder, file))
 
         # Try to use already downloaded launcher
         try:
