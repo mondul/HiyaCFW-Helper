@@ -11,7 +11,7 @@ In order to make things easier for me, and because I don't have Windows, I edite
 * Autodetects the console region from the NAND dump, downloads and decrypts its v512 launcher.
 * Creates the patched _00000002.app_ and _bootloader.nds_ for the custom firmware.
 * Uses your platform's twltool (binaries for Linux and MacOS included) to decrypt the NAND.
-* Extracts the decrypted NAND to the chosen output destination (7-Zip required for Windows).
+* Extracts the decrypted NAND to the chosen output destination.
 * Installs the HiyaCFW and the patched files on the chosen output destination.
 * (Optional) installs the latest release of TWiLightMenu++ on the chosen output destination.
 
