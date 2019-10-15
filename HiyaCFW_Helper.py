@@ -310,7 +310,7 @@ class Application(Frame):
 
             self.log.write('- Extracting HiyaCFW archive...')
 
-            proc = Popen([ _7z, 'x', '-bso0', '-y', filename, 'for PC', 'for SDNAND SD card' ])
+            proc = Popen([ _7za, 'x', '-bso0', '-y', filename, 'for PC', 'for SDNAND SD card' ])
 
             ret_val = proc.wait()
 
@@ -575,7 +575,7 @@ class Application(Frame):
                 else '00000002.app')
 
             # Prepare decryption params
-            params = [ _7z, 'x', '-bso0', '-y', '-p' + app, self.launcher_region, launcher_app ]
+            params = [ _7za, 'x', '-bso0', '-y', '-p' + app, self.launcher_region, launcher_app ]
 
             if launcher_app == '00000000.app':
                 params.append('title.tmd')
@@ -652,7 +652,7 @@ class Application(Frame):
 
             self.log.write('- Extracting ' + filename[:-3] + ' archive...')
 
-            proc = Popen([ _7z, 'x', '-bso0', '-y', filename, '_nds', 'DSi - CFW users',
+            proc = Popen([ _7za, 'x', '-bso0', '-y', filename, '_nds', 'DSi - CFW users',
                 'DSi&3DS - SD card users', 'roms' ])
 
             ret_val = proc.wait()
@@ -878,11 +878,11 @@ print('Initializing GUI...')
 root = Tk()
 
 fatcat = path.join(sysname, 'fatcat')
-_7z = path.join(sysname, '7za')
+_7za = path.join(sysname, '7za')
 
 if sysname == 'Windows':
     fatcat += '.exe'
-    _7z += '.exe'
+    _7za += '.exe'
     twltool = path.join('for PC', 'twltool.exe')
 
 else:   # Linux and MacOS
