@@ -591,7 +591,7 @@ class Application(Frame):
                 if launcher_app == '00000000.app':
                     self.files.append('title.tmd')
 
-                # Hash 00000002.app
+                # Hash launcher app
                 sha1_hash = sha1()
 
                 with open(launcher_app, 'rb') as f:
