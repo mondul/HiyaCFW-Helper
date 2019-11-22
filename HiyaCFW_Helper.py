@@ -518,7 +518,8 @@ class Application(Frame):
             if ret_val == 0:
                 self.files.append(self.console_id.get() + '.img')
 
-                Thread(target=self.extract_nand).start()
+                Thread(target=self.win_extract_nand if (sysname == 'Windows' and _7z is not None)
+                    else self.extract_nand).start()
 
             else:
                 self.log.write('ERROR: Decryptor failed')
@@ -528,6 +529,57 @@ class Application(Frame):
             print(e)
             self.log.write('ERROR: Could not execute ' + exe)
             Thread(target=self.clean, args=(True,)).start()
+
+
+    ################################################################################################
+    def win_extract_nand(self):
+        self.log.write('\nExtracting files from NAND...')
+
+        try:
+            proc = Popen([ _7z, 'x', '-bso0', '-y', self.console_id.get() + '.img', '0.fat' ])
+
+            ret_val = proc.wait()
+
+            if ret_val == 0:
+                self.files.append('0.fat')
+
+                proc = Popen([ _7z, 'x', '-bso0', '-y', '-o' + self.sd_path, '0.fat' ])
+
+                ret_val = proc.wait()
+
+                if ret_val == 0:
+                    Thread(target=self.get_launcher).start()
+
+                else:
+                    self.log.write('ERROR: Extractor failed, please update 7-Zip')
+
+                    if path.exists(fatcat):
+                        self.log.write('\nTrying with fatcat...')
+                        Thread(target=self.extract_nand).start()
+
+                    else:
+                        Thread(target=self.clean, args=(True,)).start()
+
+            else:
+                self.log.write('ERROR: Extractor failed')
+
+                if path.exists(fatcat):
+                    self.log.write('\nTrying with fatcat...')
+                    Thread(target=self.extract_nand).start()
+
+                else:
+                    Thread(target=self.clean, args=(True,)).start()
+
+        except OSError as e:
+            print(e)
+            self.log.write('ERROR: Could not execute ' + exe)
+
+            if path.exists(fatcat):
+                self.log.write('\nTrying with fatcat...')
+                Thread(target=self.extract_nand).start()
+
+            else:
+                Thread(target=self.clean, args=(True,)).start()
 
 
     ################################################################################################
@@ -896,16 +948,46 @@ root = Tk()
 
 fatcat = path.join(sysname, 'fatcat')
 _7za = path.join(sysname, '7za')
+_7z = None
 
 if sysname == 'Windows':
+    from winreg import OpenKey, QueryValueEx, HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_64KEY
+
+    print('Searching for 7-Zip in the Windows registry...')
+
+    try:
+        with OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE\\7-Zip', 0, KEY_READ | KEY_WOW64_64KEY) as hkey:
+            _7z = path.join(QueryValueEx(hkey, 'Path')[0], '7z.exe')
+
+            if not path.exists(_7z):
+                raise WindowsError
+
+            _7za = _7z
+
+    except WindowsError:
+        print('Searching for 7-Zip in the 32-bit Windows registry...')
+
+        try:
+            with OpenKey(HKEY_LOCAL_MACHINE, 'SOFTWARE\\7-Zip') as hkey:
+                _7z = path.join(QueryValueEx(hkey, 'Path')[0], '7z.exe')
+
+                if not path.exists(_7z):
+                    raise WindowsError
+
+                _7za = _7z
+
+        except WindowsError:
+            print('7-Zip not found. Will use fatcat for extraction.')
+            _7z = None
+            _7za += '.exe'
+
     fatcat += '.exe'
-    _7za += '.exe'
     twltool = path.join('for PC', 'twltool.exe')
 
 else:   # Linux and MacOS
     twltool = path.join(sysname, 'twltool')
 
-if not path.exists(fatcat):
+if _7z is None and not path.exists(fatcat):
     root.withdraw()
     showerror('Error', 'Fatcat not found. Please make sure the ' + sysname +
         ' folder is at the same location as this script' + ('.' if sysname == 'Windows'
