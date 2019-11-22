@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # HiyaCFW Helper
-# Version 3.5.1
+# Version 3.6
 # Author: mondul <mondul@huyzona.com>
 
 from tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutton, Radiobutton,
@@ -84,14 +84,28 @@ class Application(Frame):
         # Second row
         f2 = Frame(self)
 
-        # Check box
+        # Check boxes
+        self.checks_frame = Frame(f2)
+
+        # Install TWiLight check
         self.twilight = IntVar()
         self.twilight.set(1)
 
-        self.chk = Checkbutton(f2, text='Install latest TWiLight Menu++ on custom firmware',
-            variable=self.twilight)
+        twl_chk = Checkbutton(self.checks_frame,
+            text='Install latest TWiLight Menu++ on custom firmware', variable=self.twilight)
 
-        self.chk.pack(padx=10, anchor=W)
+        twl_chk.pack(padx=10, anchor=W)
+
+        # Clean files check
+        self.clean_downloaded = IntVar()
+        self.clean_downloaded.set(1)
+
+        clean_chk = Checkbutton(self.checks_frame, text='Clean downloaded files after completion',
+            variable=self.clean_downloaded)
+
+        clean_chk.pack(padx=10, anchor=W)
+
+        self.checks_frame.pack(fill=X)
 
         # NAND operation frame
         self.nand_frame = LabelFrame(f2, text='NAND operation', padx=10, pady=10)
@@ -147,13 +161,13 @@ class Application(Frame):
     def change_mode(self):
         if (self.nand_mode):
             self.nand_frame.pack_forget()
-            self.chk.pack(padx=10, anchor=W)
+            self.checks_frame.pack(padx=10, anchor=W)
             self.nand_mode = False
 
         else:
             if askokcancel('Warning', ('You are about to enter NAND mode. Do it only if you know '
                 'what you are doing. Proceed?'), icon=WARNING):
-                self.chk.pack_forget()
+                self.checks_frame.pack_forget()
                 self.nand_frame.pack(padx=10, pady=(0, 10), fill=X)
                 self.nand_mode = True
 
@@ -315,7 +329,8 @@ class Application(Frame):
             ret_val = proc.wait()
 
             if ret_val == 0:
-                self.files.append(filename)
+                if self.clean_downloaded.get() == 1:
+                    self.files.append(filename)
                 self.folders.append('for PC')
                 self.folders.append('for SDNAND SD card')
                 # Got to decrypt NAND if bootloader.nds is present
@@ -585,7 +600,8 @@ class Application(Frame):
             ret_val = proc.wait()
 
             if ret_val == 0:
-                self.files.append(self.launcher_region)
+                if self.clean_downloaded.get() == 1:
+                    self.files.append(self.launcher_region)
                 self.files.append(launcher_app)
 
                 if launcher_app == '00000000.app':
@@ -658,7 +674,8 @@ class Application(Frame):
             ret_val = proc.wait()
 
             if ret_val == 0:
-                self.files.append(filename)
+                if self.clean_downloaded.get() == 1:
+                    self.files.append(filename)
                 self.folders.append('DSi - CFW users')
                 self.folders.append('_nds')
                 self.folders.append('DSi&3DS - SD card users')
@@ -896,7 +913,7 @@ if not path.exists(fatcat):
     root.destroy()
     exit(1)
 
-root.title('HiyaCFW Helper v3.5.1')
+root.title('HiyaCFW Helper v3.6')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window
