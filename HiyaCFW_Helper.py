@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # HiyaCFW Helper
-# Version 3.6
+# Version 3.6.1
 # Author: mondul <mondul@huyzona.com>
 
 from tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutton, Radiobutton,
@@ -1005,7 +1005,7 @@ if _7z is None and not path.exists(fatcat):
     root.destroy()
     exit(1)
 
-root.title('HiyaCFW Helper v3.6')
+root.title('HiyaCFW Helper v3.6.1')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window
