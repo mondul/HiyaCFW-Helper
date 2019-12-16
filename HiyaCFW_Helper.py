@@ -849,7 +849,7 @@ class Application(Frame):
             '484e4143': 'CHN',
             '484e4145': 'USA',
             '484e414a': 'JAP',
-            '484e414b': 'KOR',
+            #'484e414b': 'KOR',
             '484e4150': 'EUR',
             '484e4155': 'AUS'
         }
