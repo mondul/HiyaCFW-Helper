@@ -650,7 +650,8 @@ class Application(Frame):
                 else '00000002.app')
 
             # Prepare decryption params
-            params = [ _7za, 'x', '-bso0', '-y', '-p' + app, self.launcher_region, launcher_app ]
+            params = [ _7za, 'x', '-bso0', '-y', '-p' + app.lower(), self.launcher_region,
+                launcher_app ]
 
             if launcher_app == '00000000.app':
                 params.append('title.tmd')
@@ -859,8 +860,9 @@ class Application(Frame):
                 for file in listdir(path.join(self.sd_path, 'title', '00030017', app, 'content')):
                     if file.endswith('.app'):
                         try:
-                            self.log.write('- Detected ' + REGION_CODES[app] + ' console NAND dump')
-                            self.launcher_region = REGION_CODES[app]
+                            self.log.write('- Detected ' + REGION_CODES[app.lower()] +
+                                ' console NAND dump')
+                            self.launcher_region = REGION_CODES[app.lower()]
                             return app
 
                         except KeyError:
