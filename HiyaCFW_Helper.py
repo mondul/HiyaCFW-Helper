@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# HiyaCFW Helper
+# hiyaCFW Helper
 # Version 3.6.1
 # Author: mondul <mondul@huyzona.com>
 
@@ -308,21 +308,21 @@ class Application(Frame):
 
     ################################################################################################
     def get_latest_hiyacfw(self):
-        # Try to use already downloaded HiyaCFW archive
-        filename = 'HiyaCFW.7z'
+        # Try to use already downloaded hiyaCFW archive
+        filename = 'hiyaCFW.7z'
 
         try:
             if path.isfile(filename):
-                self.log.write('\nPreparing HiyaCFW...')
+                self.log.write('\nPreparing hiyaCFW...')
 
             else:
-                self.log.write('\nDownloading latest HiyaCFW release...')
+                self.log.write('\nDownloading latest hiyaCFW release...')
 
                 with urlopen('https://github.com/RocketRobz/hiyaCFW/releases/latest/download/' +
                     filename) as src, open(filename, 'wb') as dst:
                     copyfileobj(src, dst)
 
-            self.log.write('- Extracting HiyaCFW archive...')
+            self.log.write('- Extracting hiyaCFW archive...')
 
             proc = Popen([ _7za, 'x', '-bso0', '-y', filename, 'for PC', 'for SDNAND SD card' ])
 
@@ -342,7 +342,7 @@ class Application(Frame):
 
         except (URLError, IOError) as e:
             print(e)
-            self.log.write('ERROR: Could not get HiyaCFW')
+            self.log.write('ERROR: Could not get hiyaCFW')
 
         except OSError as e:
             print(e)
@@ -615,7 +615,7 @@ class Application(Frame):
             Thread(target=self.clean, args=(True,)).start()
             return
 
-        # Delete contents of the launcher folder as it will be replaced by the one from HiyaCFW
+        # Delete contents of the launcher folder as it will be replaced by the one from hiyaCFW
         launcher_folder = path.join(self.sd_path, 'title', '00030017', app, 'content')
 
         # Walk through all files in the launcher content folder
@@ -1005,7 +1005,7 @@ if _7z is None and not path.exists(fatcat):
     root.destroy()
     exit(1)
 
-root.title('HiyaCFW Helper v3.6.1')
+root.title('hiyaCFW Helper v3.6.1')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window
