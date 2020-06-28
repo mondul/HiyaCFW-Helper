@@ -28,7 +28,9 @@ Clicking on the integrated circuit button will give you a NAND mode, where you c
 ### _MacOS:_
 * Python 3.5 or greater, you can install it with one of these options:
   * _[Recommended]_ Homebrew (install homebrew by running `/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"` in a terminal window, then `brew install python`).
-  * _[Might have issues]_ The latest installer from the [python.org releases page](https://www.python.org/downloads/release) ([3.8.0](https://www.python.org/ftp/python/3.8.0/python-3.8.0-macosx10.9.pkg) at the time of this writing). **NOTE:** Using this option you might need to go to `Applications` > `Python 3.<version>` and run `Install Certificates.command`. This will avoid the `"Could not get HiyaCFW"` error.
+  * _[Might have issues]_ The latest installer from the [python.org releases page](https://www.python.org/downloads/release) ([3.8.3](https://www.python.org/ftp/python/3.8.3/python-3.8.3-macosx10.9.pkg) at the time of this writing).
+ 
+ **NOTE:** If you get the `"Could not get HiyaCFW"` error, run ``pip install certifi`` to install the needed certificates for python.
 
 ## What it includes:
 * 7za binaries for Windows, Linux and MacOS. It's used to decompress the HiyaCFW latest release as [@RocketRobz](https://github.com/RocketRobz) uploaded it as a 7z archive. Compiled from the [kornelski's GitHub repo](https://github.com/kornelski/7z).
