@@ -1,0 +1,26 @@
+﻿<Window x:Class="HiyaCFW_Helper.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:HiyaCFW_Helper"
+        mc:Ignorable="d"
+        Title="HiyaCFW Helper" Height="245" Width="400" ResizeMode="CanMinimize" WindowStartupLocation="CenterScreen">
+    <Grid>
+        <GroupBox Header="DSi NAND file with no$gba footer" Height="60" VerticalAlignment="Top" Margin="10 0 10 10">
+            <DockPanel>
+                <TextBox Name="nandTxt" HorizontalAlignment="Left" Width="295" Height="23" TextWrapping="NoWrap" VerticalContentAlignment="Center" Margin="10 0 0 0" IsReadOnly="True"/>
+                <Button Name="browseNandBtn" Content="..." HorizontalAlignment="Right" Width="30" Height="23" Margin="0 0 10 0" Click="browseNandBtn_Click"/>
+            </DockPanel>
+        </GroupBox>
+        <GroupBox Header="Output drive/folder" Height="60" VerticalAlignment="Top" Margin="10 65 10 10">
+            <DockPanel>
+                <TextBox Name="driveTxt" HorizontalAlignment="Left" Width="295" Height="23" TextWrapping="NoWrap" VerticalContentAlignment="Center" Margin="10 0 0 0" IsReadOnly="True"/>
+                <Button Name="browseDriveBtn" Content="..." HorizontalAlignment="Right" Width="30" Height="23" Margin="0 0 10 0" Click="browseDriveBtn_Click"/>
+            </DockPanel>
+        </GroupBox>
+        <CheckBox Name="twilightChk" Content="Install latest TWiLight Menu++ on custom firmware" Margin="25 135 0 0" IsChecked="True"/>
+        <Button Name="startBtn" Content="Start" Width="100" Height="23" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="80 0 0 15" IsEnabled="False" Click="startBtn_Click"/>
+        <Button Name="quitBtn" Content="Quit" Width="100" Height="23" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0 0 80 15" Click="quitBtn_Click"/>
+    </Grid>
+</Window>
