@@ -26,6 +26,7 @@ namespace HiyaCFW_Helper
             done = false;
             cancellationTokenSource = new CancellationTokenSource();
             InitializeComponent();
+            this.Owner = App.Current.MainWindow;
             // Add event after the window content is rendered
             this.ContentRendered += LogWindow_ContentRendered;
         }
