@@ -65,7 +65,7 @@ namespace HiyaCFW_Helper
                 {
                     case _AboutMenuItemId:
                         MessageBox.Show($"HiyaCFW Helper\r\nVersion {Assembly.GetExecutingAssembly().GetName().Version}\r\n\r\nhttps://github.com/mondul",
-                            "About HiyaCFW Helper", MessageBoxButton.OK, MessageBoxImage.Information);
+                            "About - HiyaCFW Helper", MessageBoxButton.OK, MessageBoxImage.Information);
                         handled = true;
                         break;
                 }
@@ -96,7 +96,7 @@ namespace HiyaCFW_Helper
         {
             System.Windows.Forms.FolderBrowserDialog folderDialog = new System.Windows.Forms.FolderBrowserDialog
             {
-                Description = "Please choose your SD card drive path or an output folder for the custom firmware files:"
+                Description = "Please choose your SD card drive path or an output folder for the custom firmware files. In order to avoid boot errors please assure it is empty before continuing."
             };
 
             driveTxt.Text = folderDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK ? folderDialog.SelectedPath : string.Empty;
@@ -106,7 +106,8 @@ namespace HiyaCFW_Helper
 
         private void startBtn_Click(object sender, RoutedEventArgs e)
         {
-
+            LogWindow logWindow = new LogWindow(nandTxt.Text, driveTxt.Text, twilightChk.IsChecked.GetValueOrDefault());
+            logWindow.ShowDialog();
         }
 
         private void quitBtn_Click(object sender, RoutedEventArgs e)

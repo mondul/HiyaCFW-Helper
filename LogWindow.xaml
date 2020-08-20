@@ -1,0 +1,21 @@
+﻿<Window x:Class="HiyaCFW_Helper.LogWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:HiyaCFW_Helper"
+        mc:Ignorable="d"
+        Title="Log - HiyaCFW Helper" Width="550" Height="550" WindowStartupLocation="CenterScreen" ResizeMode="NoResize" ShowInTaskbar="False">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="22"/>
+        </Grid.RowDefinitions>
+        <TextBox Name="logTxt" Grid.Row="0" FontFamily="Consolas" FontSize="13" TextWrapping="Wrap" IsReadOnly="True" VerticalScrollBarVisibility="Visible"/>
+        <StatusBar Grid.Row="1">
+            <StatusBarItem>
+                <TextBlock Name="statusTxt" Text="Please wait..."/>
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</Window>
