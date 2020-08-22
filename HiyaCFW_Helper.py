@@ -22,6 +22,7 @@ from subprocess import Popen
 from struct import unpack_from
 from shutil import rmtree, copyfile, copyfileobj
 from distutils.dir_util import copy_tree, _path_created
+import certifi
 
 
 ####################################################################################################
