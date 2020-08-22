@@ -1,0 +1,84 @@
+name: Make distribution binaries
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    name: Linux
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+          architecture: 'x64'
+      - name: Install pyinstaller
+        run: |
+          pip3 install pyinstaller
+      - name: Make binary
+        run: |
+          pyinstaller --onefile HiyaCFW_Helper.py
+          cd dist
+          zip ../HiyaCFW_Helper-${{ steps.vars.outputs.tag }}-Linux.zip HiyaCFW_Helper
+      - name: Publish artifact
+        uses: actions/upload-artifact@v2
+        with:
+          path: HiyaCFW_Helper-${{ steps.vars.outputs.tag }}-Linux.zip
+          name: linux
+
+  macos:
+    runs-on: macos-latest
+    name: macOS
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+          architecture: 'x64'
+      - name: Install pyinstaller
+        run: |
+          pip3 install pyinstaller
+      - name: Get tag
+        id: vars
+        run: ::set-output name=tag::${GITHUB_REF#refs/*/}
+      - name: Make binary
+        run: |
+          pyinstaller --onefile HiyaCFW_Helper.py
+          cd dist
+          zip ../HiyaCFW_Helper-${{ steps.vars.outputs.tag }}-macOS.zip HiyaCFW_Helper
+      - name: Publish artifact
+        uses: actions/upload-artifact@v2
+        with:
+          path: HiyaCFW_Helper-${{ steps.vars.outputs.tag }}-macOS.zip
+          name: macos
+
+  win64:
+    runs-on: windows-latest
+    name: Windows
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+          architecture: 'x86'
+      - name: Install pyinstaller
+        run: |
+          pip3 install pyinstaller
+      - name: Make binary
+        run: |
+          pyinstaller --onefile HiyaCFW_Helper.py
+          cd dist
+          tar.exe -acf ../HiyaCFW_Helper-${{ steps.vars.outputs.tag }}-Win.zip HiyaCFW_Helper.exe
+      - name: Publish artifact
+        uses: actions/upload-artifact@v2
+        with:
+          path: HiyaCFW_Helper-${{ steps.vars.outputs.tag }}-Win.zip
+          name: win64
