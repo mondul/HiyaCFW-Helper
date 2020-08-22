@@ -21,7 +21,7 @@ jobs:
           pip3 install pyinstaller
       - name: Get tag
         id: vars
-        run: ::set-output name=tag::${GITHUB_REF#refs/*/}
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - name: Make binary
         run: |
           pyinstaller --onefile HiyaCFW_Helper.py
@@ -49,7 +49,7 @@ jobs:
           pip3 install pyinstaller
       - name: Get tag
         id: vars
-        run: ::set-output name=tag::${GITHUB_REF#refs/*/}
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - name: Make binary
         run: |
           pyinstaller --onefile HiyaCFW_Helper.py
@@ -78,7 +78,7 @@ jobs:
       - name: Get tag
         id: vars
         shell: bash
-        run: ::set-output name=tag::${GITHUB_REF#refs/*/}
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - name: Make binary
         run: |
           pyinstaller --onefile HiyaCFW_Helper.py
