@@ -101,9 +101,9 @@ jobs:
         run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - name: Make binary
         run: |
-          zip HiyaCFW-Helper-t-Python3.zip HiyaCFW_Helper.py
+          zip HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-Python3.zip HiyaCFW_Helper.py
           cd tools
-          zip -ur ../HiyaCFW-Helper-t-Python3.zip *
+          zip -ur ../HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-Python3.zip *
       - name: Publish artifact
         uses: actions/upload-artifact@v2
         with:
