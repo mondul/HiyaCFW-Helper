@@ -12,7 +12,7 @@ from tkinter.messagebox import askokcancel, showerror, showinfo, WARNING
 from tkinter.filedialog import askopenfilename, askdirectory
 from platform import system
 from os import path, remove, chmod, listdir
-from sys import exit
+from sys import exit, argv
 from threading import Thread
 from queue import Queue, Empty
 from hashlib import sha1
@@ -471,7 +471,7 @@ class Application(Frame):
         self.log.write('\nGenerating new bootloader...')
 
         exe = (path.join('for PC', 'bootloader files', 'ndstool.exe') if sysname == 'Windows' else
-            path.join(sysname, 'ndsblc'))
+            path.join(scriptPath, sysname, 'ndsblc'))
 
         try:
             proc = Popen([ exe, '-c', 'bootloader.nds', '-9', 'arm9.bin', '-7', 'arm7.bin', '-t',
@@ -956,8 +956,9 @@ print('Initializing GUI...')
 
 root = Tk()
 
-fatcat = path.join(sysname, 'fatcat')
-_7za = path.join(sysname, '7za')
+scriptPath = path.dirname(path.abspath(argv[0]))
+fatcat = path.join(scriptPath, sysname, 'fatcat')
+_7za = path.join(scriptPath, sysname, '7za')
 _7z = None
 
 if sysname == 'Windows':
@@ -995,7 +996,7 @@ if sysname == 'Windows':
     twltool = path.join('for PC', 'twltool.exe')
 
 else:   # Linux and MacOS
-    twltool = path.join(sysname, 'twltool')
+    twltool = path.join(scriptPath, sysname, 'twltool')
 
 if _7z is None and not path.exists(fatcat):
     root.withdraw()
