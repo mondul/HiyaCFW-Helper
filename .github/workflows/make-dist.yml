@@ -24,7 +24,7 @@ jobs:
         run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - name: Make binary
         run: |
-          pyinstaller --onefile HiyaCFW_Helper.py
+          pyinstaller --add-data "tools/Linux/*:Linux" HiyaCFW_Helper.py
           cd dist
           zip ../HiyaCFW_Helper-${{ steps.vars.outputs.tag }}-Linux.zip HiyaCFW_Helper
       - name: Publish artifact
@@ -52,7 +52,7 @@ jobs:
         run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - name: Make binary
         run: |
-          pyinstaller --onefile HiyaCFW_Helper.py
+          pyinstaller --add-data "tools/Darwin/*:Darwin" HiyaCFW_Helper.py
           cd dist
           zip ../HiyaCFW_Helper-${{ steps.vars.outputs.tag }}-macOS.zip HiyaCFW_Helper
       - name: Publish artifact
