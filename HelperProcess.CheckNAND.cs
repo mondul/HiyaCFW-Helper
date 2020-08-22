@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -25,15 +26,14 @@ namespace HiyaCFW_Helper
             return new string(c);
         }
 
-        private async Task<bool> CheckNAND()
+        private async Task CheckNAND()
         {
             log.Report("• Checking NAND file...");
-            status.Report($"Checking {nandFile}...");
 
             // Fail if file does not exist
             if (!File.Exists(nandFile))
             {
-                return true;
+                throw new Exception("NAND file not found");
             }
 
             // Read the NAND file
@@ -48,20 +48,20 @@ namespace HiyaCFW_Helper
                 // Check if the footer's header matches with the read data
                 if (!footerHeader.SequenceEqual(bstr))
                 {
-                    return true;
+                    throw new Exception("No$GBA footer not found");
                 }
+
+                log.Report("  OK");
 
                 // Read the CID
                 await fileStream.ReadAsync(bstr, 0, 16, cancellationToken);
-                log.Report($"  - eMMC CID: {ByteToHexBitFiddle(bstr)}");
+                log.Report($"  eMMC CID: {ByteToHexBitFiddle(bstr)}");
 
                 // Read the console ID
                 bstr = new byte[8];
                 await fileStream.ReadAsync(bstr, 0, 8, cancellationToken);
-                log.Report($"  - Console ID: {ByteToHexBitFiddle(bstr.Reverse().ToArray())}\r\n");
+                log.Report($"  Console ID: {ByteToHexBitFiddle(bstr.Reverse().ToArray())}\r\n");
             }
-
-            return false;
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.IO;
 using System.Threading;
 using System.Windows;
 
@@ -46,13 +47,26 @@ namespace HiyaCFW_Helper
 
             try
             {
+                // We'll use this folder for all downloaded and extracted files
+                Directory.CreateDirectory("tmp");
                 await helper.Start();
-                done = true;
             }
 
             catch (OperationCanceledException)
             {
                 MessageBox.Show("Helper process interrupted", "Warning - HiyaCFW Helper", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+
+            catch (Exception ex)
+            {
+                logTxt.AppendText("--\r\nUnexpected error: " + ex.Message);
+                statusTxt.Text = "Unexpected error!";
+            }
+
+            finally
+            {
+                cancellationTokenSource.Dispose();
+                done = true;
             }
         }
 

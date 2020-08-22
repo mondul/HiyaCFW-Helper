@@ -55,6 +55,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
@@ -88,6 +89,8 @@
     </Compile>
     <Compile Include="HelperProcess.CheckNAND.cs" />
     <Compile Include="HelperProcess.cs" />
+    <Compile Include="HelperProcess.GetAssetsURLs.cs" />
+    <Compile Include="HelperProcess.GetHiya.cs" />
     <Compile Include="LogWindow.xaml.cs">
       <DependentUpon>LogWindow.xaml</DependentUpon>
     </Compile>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -6,6 +7,8 @@ namespace HiyaCFW_Helper
 {
     public partial class HelperProcess
     {
+        private static readonly HttpClient client = new HttpClient();
+
         private readonly string nandFile;
         private readonly string outputFolder;
         private readonly bool installTWiLight;
@@ -16,6 +19,9 @@ namespace HiyaCFW_Helper
 
         public HelperProcess(string nandFile, string outputFolder, bool installTWiLight, Progress<string> log, Progress<string> status, CancellationToken cancellationToken)
         {
+            // GitHub API requires an user agent to be sent
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("curl/4.0");
+
             this.nandFile = nandFile;
             this.outputFolder = outputFolder;
             this.installTWiLight = installTWiLight;
@@ -25,20 +31,12 @@ namespace HiyaCFW_Helper
             this.cancellationToken = cancellationToken;
         }
 
-        private void LogError(string txt)
-        {
-            log.Report(txt);
-            status.Report("Error!");
-        }
-
         public async Task Start()
         {
             // Check NAND file
-            if (await CheckNAND())
-            {
-                LogError("  ERROR: No$GBA footer not found");
-                return;
-            }
+            await CheckNAND();
+            // Check NAND file
+            await GetHiya();
 
             status.Report("Done!");
         }
