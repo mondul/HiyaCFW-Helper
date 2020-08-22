@@ -90,11 +90,31 @@ jobs:
           path: HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-Win.zip
           name: windows
 
+  python:
+    runs-on: ubuntu-latest
+    name: Python 3
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Get tag
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+      - name: Make binary
+        run: |
+          zip HiyaCFW-Helper-t-Python3.zip HiyaCFW_Helper.py
+          cd tools
+          zip -ur ../HiyaCFW-Helper-t-Python3.zip *
+      - name: Publish artifact
+        uses: actions/upload-artifact@v2
+        with:
+          path: HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-Python3.zip
+          name: python
+
   publish:
     runs-on: ubuntu-latest
     name: Publish builds
     if: ${{ success() }}
-    needs: [linux, macos, windows]
+    needs: [linux, macos, windows, python]
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v2
