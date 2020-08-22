@@ -24,9 +24,9 @@ jobs:
         run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - name: Make binary
         run: |
-          pyinstaller --add-data "tools/Linux/*:Linux" HiyaCFW_Helper.py
+          pyinstaller --add-data "tools/Linux/*:Linux" -w HiyaCFW_Helper.py
           cd dist
-          zip -r ../HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-Linux.zip HiyaCFW_Helper
+          zip -r ../HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-Linux.zip HiyaCFW_Helper.app
       - name: Publish artifact
         uses: actions/upload-artifact@v2
         with:
