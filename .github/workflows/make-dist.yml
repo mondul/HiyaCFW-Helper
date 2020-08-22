@@ -26,7 +26,7 @@ jobs:
         run: |
           pyinstaller --add-data "tools/Linux/*:Linux" HiyaCFW_Helper.py
           cd dist
-          zip ../HiyaCFW_Helper-${{ steps.vars.outputs.tag }}-Linux.zip HiyaCFW_Helper
+          zip -r ../HiyaCFW_Helper-${{ steps.vars.outputs.tag }}-Linux.zip HiyaCFW_Helper
       - name: Publish artifact
         uses: actions/upload-artifact@v2
         with:
@@ -54,7 +54,7 @@ jobs:
         run: |
           pyinstaller --add-data "tools/Darwin/*:Darwin" HiyaCFW_Helper.py
           cd dist
-          zip ../HiyaCFW_Helper-${{ steps.vars.outputs.tag }}-macOS.zip HiyaCFW_Helper
+          zip -r ../HiyaCFW_Helper-${{ steps.vars.outputs.tag }}-macOS.zip HiyaCFW_Helper
       - name: Publish artifact
         uses: actions/upload-artifact@v2
         with:
