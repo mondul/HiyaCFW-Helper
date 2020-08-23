@@ -37,11 +37,14 @@ namespace HiyaCFW_Helper
         public MainWindow()
         {
             InitializeComponent();
-            Loaded += MainWindow_Loaded;
+            this.Loaded += MainWindow_Loaded;
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            // Unset the event to avoid refiring
+            this.Loaded -= MainWindow_Loaded;
+
             IntPtr windowhandle = new WindowInteropHelper(this).Handle;
             HwndSource hwndSource = HwndSource.FromHwnd(windowhandle);
 
