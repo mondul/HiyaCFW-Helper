@@ -87,10 +87,22 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="HelperProcess.CheckNAND.cs" />
     <Compile Include="HelperProcess.cs" />
-    <Compile Include="HelperProcess.GetAssetsURLs.cs" />
-    <Compile Include="HelperProcess.GetHiya.cs" />
+    <Compile Include="HelperProcess.CheckNAND.cs">
+      <DependentUpon>HelperProcess.cs</DependentUpon>
+    </Compile>
+    <Compile Include="HelperProcess.CreateBootloader.cs">
+      <DependentUpon>HelperProcess.cs</DependentUpon>
+    </Compile>
+    <Compile Include="HelperProcess.GetAssetsURLs.cs">
+      <DependentUpon>HelperProcess.cs</DependentUpon>
+    </Compile>
+    <Compile Include="HelperProcess.GetHiya.cs">
+      <DependentUpon>HelperProcess.cs</DependentUpon>
+    </Compile>
+    <Compile Include="HelperProcess.Utils.cs">
+      <DependentUpon>HelperProcess.cs</DependentUpon>
+    </Compile>
     <Compile Include="LogWindow.xaml.cs">
       <DependentUpon>LogWindow.xaml</DependentUpon>
     </Compile>

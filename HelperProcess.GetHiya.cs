@@ -10,25 +10,6 @@ namespace HiyaCFW_Helper
 {
     public partial class HelperProcess
     {
-        private async Task<int> ExecAsync(Process process)
-        {
-            TaskCompletionSource<int> completionSource = new TaskCompletionSource<int>();
-
-            process.Start();
-
-            process.Exited += (object sender, EventArgs e) => completionSource.TrySetResult(process.ExitCode);
-
-            if (process.HasExited)
-            {
-                return process.ExitCode;
-            }
-
-            using (CancellationTokenRegistration registration = cancellationToken.Register(() => completionSource.TrySetCanceled(cancellationToken)))
-            {
-                return await completionSource.Task;
-            }
-        }
-
         private async Task GetHiya()
         {
             log.Report("• Getting latest HiyaCFW release...\r\n  - Getting archive URL from GitHub API...");
@@ -80,14 +61,17 @@ namespace HiyaCFW_Helper
                 {
                     throw new Exception(await process.StandardError.ReadToEndAsync());
                 }
-
-                if (!Directory.Exists(Path.Combine("tmp", "for PC")) || !Directory.Exists(Path.Combine("tmp", "for SDNAND SD card")))
-                {
-                    throw new Exception("Needed folders were not extracted, cannot continue");
-                }
-
-                log.Report("    OK\r\n");
             }
+
+            if (!Directory.Exists(Path.Combine("tmp", "for PC")) || !Directory.Exists(Path.Combine("tmp", "for SDNAND SD card")))
+            {
+                throw new Exception("Needed folders were not extracted, cannot continue");
+            }
+
+            // Delete archive as is no longer needed
+            File.Delete(archive);
+
+            log.Report("    OK\r\n");
         }
     }
 }

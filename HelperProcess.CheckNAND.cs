@@ -10,22 +10,6 @@ namespace HiyaCFW_Helper
         // No$GBA footer header: DSi eMMC CID/CPU
         private static readonly byte[] footerHeader = new byte[] { 0x44, 0x53, 0x69, 0x20, 0x65, 0x4d, 0x4d, 0x43, 0x20, 0x43, 0x49, 0x44, 0x2f, 0x43, 0x50, 0x55 };
 
-        // Convert byte array to hex string
-        // Taken from https://stackoverflow.com/questions/311165/how-do-you-convert-a-byte-array-to-a-hexadecimal-string-and-vice-versa/14333437#14333437
-        private static string ByteToHexBitFiddle(byte[] bytes)
-        {
-            char[] c = new char[bytes.Length * 2];
-            int b;
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                b = bytes[i] >> 4;
-                c[i * 2] = (char)(55 + b + (((b - 10) >> 31) & -7));
-                b = bytes[i] & 0xF;
-                c[i * 2 + 1] = (char)(55 + b + (((b - 10) >> 31) & -7));
-            }
-            return new string(c);
-        }
-
         private async Task CheckNAND()
         {
             log.Report("• Checking NAND file...");

@@ -35,8 +35,10 @@ namespace HiyaCFW_Helper
         {
             // Check NAND file
             await CheckNAND();
-            // Check NAND file
+            // Download and extract HiyaCFW
             await GetHiya();
+            // Extract and patch BIOS, and create bootloader
+            await CreateBootloader();
 
             status.Report("Done!");
         }
