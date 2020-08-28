@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,6 +46,7 @@ namespace HiyaCFW_Helper
             }
         }
 
+        // Calculate the SHA1 of a file
         private async Task<string> Hash(string filename)
         {
             // Fail if file does not exist
@@ -73,6 +75,116 @@ namespace HiyaCFW_Helper
                     }
 
                     return ByteToHexBitFiddle(sha1.Hash);
+                }
+            }
+        }
+
+        // Convert a byte array to int
+        private static int Unpack(byte[] buf)
+        {
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(buf);
+            }
+            return BitConverter.ToInt32(buf, 0);
+        }
+
+        // IPS patch header: PATCH
+        private static readonly byte[] patchHeader = new byte[] { 0x50, 0x41, 0x54, 0x43, 0x48 };
+
+        // Apply an IPS patch on a file
+        private async Task IPSPatch(string filename, string patchFilename)
+        {
+            if (!File.Exists(filename))
+            {
+                throw new Exception("File to patch not found");
+            }
+            if (!File.Exists(patchFilename))
+            {
+                throw new Exception("Patch file not found");
+            }
+
+            // Read the patch file
+            using (FileStream patchFileStream = new FileStream(patchFilename, FileMode.Open, FileAccess.Read, FileShare.Read, 5, true))
+            {
+                // Check patch header
+                byte[] buf = new byte[5];
+                await patchFileStream.ReadAsync(buf, 0, 5, cancellationToken);
+                if (!patchHeader.SequenceEqual(buf))
+                {
+                    throw new Exception("Invalid IPS");
+                }
+
+                // Reset buffer size
+                buf = new byte[4];
+                // Data buffer
+                byte[] data = new byte[65535];
+                // 3-byte offset
+                int offset;
+                // 2-byte size
+                int size;
+                // EOF footer position
+                long eofPos = patchFileStream.Length - 3;
+
+                // Read first record
+                buf[0] = 0;
+                await patchFileStream.ReadAsync(buf, 1, 3, cancellationToken);
+
+                // Open the file to patch for writing
+                using (FileStream fileStream = new FileStream(filename, FileMode.Open, FileAccess.Write, FileShare.None, 65535, true))
+                {
+                    while (patchFileStream.Position < eofPos)
+                    {
+                        // Unpack 3-byte pointer
+                        offset = Unpack(buf);
+                        // Read size of data chunk
+                        buf[0] = 0; buf[1] = 0;
+                        await patchFileStream.ReadAsync(buf, 2, 2, cancellationToken);
+                        // Unpack 2-byte size
+                        size = Unpack(buf);
+
+                        // Check for RLE
+                        if (size == 0)
+                        {
+                            // Read RLE size
+                            buf[0] = 0; buf[1] = 0;
+                            await patchFileStream.ReadAsync(buf, 2, 2, cancellationToken);
+                            // Unpack 2-byte RLE size
+                            size = Unpack(buf);
+
+                            // Read one byte
+                            await patchFileStream.ReadAsync(data, 0, 1, cancellationToken);
+                            // Fill the data buffer to the found size
+                            for (int i = 1; i < size; i++)
+                            {
+                                data[i] = data[0];
+                            }
+                        }
+                        else
+                        {
+                            await patchFileStream.ReadAsync(data, 0, size, cancellationToken);
+                        }
+
+                        // Write to file
+                        fileStream.Seek(offset, SeekOrigin.Begin);
+                        await fileStream.WriteAsync(data, 0, size, cancellationToken);
+
+                        // Read next record
+                        buf[0] = 0;
+                        await patchFileStream.ReadAsync(buf, 1, 3, cancellationToken);
+                    }
+
+                    // Check if file needs to be truncated
+                    if (patchFileStream.Position == eofPos)
+                    {
+                        // Read truncate offset
+                        buf[0] = 0;
+                        await patchFileStream.ReadAsync(buf, 1, 3, cancellationToken);
+                        // Unpack 3-byte pointer
+                        offset = Unpack(buf);
+                        // Truncate file
+                        fileStream.SetLength(offset);
+                    }
                 }
             }
         }
