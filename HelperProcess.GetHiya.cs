@@ -16,7 +16,7 @@ namespace HiyaCFW_Helper
 
             string[] urls = await GetAssetsURLs("RocketRobz/hiyaCFW");
 
-            log.Report("  - Downloading archive...");
+            log.Report("    OK\r\n\r\n  - Downloading archive...");
 
             Uri uri = new Uri(urls.FirstOrDefault());
             string archive = Path.Combine("tmp", uri.Segments.Last());
@@ -29,7 +29,7 @@ namespace HiyaCFW_Helper
                 }
             }
 
-            log.Report("  - Extracting archive...");
+            log.Report("    OK\r\n\r\n  - Extracting archive...");
 
             using (Process process = new Process()
             {

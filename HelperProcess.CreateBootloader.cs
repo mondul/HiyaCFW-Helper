@@ -50,7 +50,7 @@ namespace HiyaCFW_Helper
 
             log.Report("    OK");
             log.Report($"    arm7.bin SHA1: {await Hash("arm7.bin")}");
-            log.Report($"    arm9.bin SHA1: {await Hash("arm9.bin")}");
+            log.Report($"    arm9.bin SHA1: {await Hash("arm9.bin")}\r\n");
         }
 
         private async Task PatchBIOS()
@@ -61,7 +61,7 @@ namespace HiyaCFW_Helper
 
             log.Report("    OK");
             log.Report($"    Patched arm7.bin SHA1: {await Hash("arm7.bin")}");
-            log.Report($"    Patched arm9.bin SHA1: {await Hash("arm9.bin")}");
+            log.Report($"    Patched arm9.bin SHA1: {await Hash("arm9.bin")}\r\n");
         }
 
         private async Task PrependToBIOS()
@@ -91,7 +91,7 @@ namespace HiyaCFW_Helper
             File.Delete("arm9.bin.bak");
 
             log.Report("    OK");
-            log.Report($"    Prepended arm9.bin SHA1: {await Hash("arm9.bin")}");
+            log.Report($"    Prepended arm9.bin SHA1: {await Hash("arm9.bin")}\r\n");
         }
 
         private async Task CreateBootloader()
