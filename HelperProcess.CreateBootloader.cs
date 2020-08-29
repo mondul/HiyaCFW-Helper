@@ -64,11 +64,42 @@ namespace HiyaCFW_Helper
             log.Report($"    Patched arm9.bin SHA1: {await Hash("arm9.bin")}");
         }
 
+        private async Task PrependToBIOS()
+        {
+            log.Report("  - Prepending data to ARM9 BIOS...");
+            // Rename ARM9 BIOS file
+            File.Move("arm9.bin", "arm9.bin.bak");
+            // Rename prepend data file
+            File.Move(Path.Combine("tmp", "for PC", "bootloader files", "bootloader arm9 append to start.bin"), "arm9.bin");
+            // Append ARM9 BIOS backup to data file
+            using (FileStream readFileStream = new FileStream("arm9.bin.bak", FileMode.Open, FileAccess.Read, FileShare.Read, 163840, true))
+            {
+                using (FileStream appendFileStream = new FileStream("arm9.bin", FileMode.Append, FileAccess.Write, FileShare.None, 163840, true))
+                {
+                    byte[] buf = new byte[163840];
+
+                    do
+                    {
+                        int read = await readFileStream.ReadAsync(buf, 0, 163840, cancellationToken);
+                        await appendFileStream.WriteAsync(buf, 0, read, cancellationToken);
+                    }
+                    while (readFileStream.Position < readFileStream.Length);
+                }
+            }
+
+            // Delete no longer needed file
+            File.Delete("arm9.bin.bak");
+
+            log.Report("    OK");
+            log.Report($"    Prepended arm9.bin SHA1: {await Hash("arm9.bin")}");
+        }
+
         private async Task CreateBootloader()
         {
             log.Report("• Creating bootloader...");
             await ExtractBIOS();
             await PatchBIOS();
+            await PrependToBIOS();
         }
     }
 }
