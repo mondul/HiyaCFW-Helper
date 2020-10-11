@@ -83,11 +83,11 @@ jobs:
       - name: Make binary
         run: |
           pyinstaller --onefile HiyaCFW_Helper.py
-          move dist/HiyaCFW_Helper.exe HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-Win.exe
+          tar.exe dist/HiyaCFW_Helper.exe HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-Win.zip
       - name: Publish artifact
         uses: actions/upload-artifact@v2
         with:
-          path: HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-Win.exe
+          path: HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-Win.zip
           name: windows
 
   python:
