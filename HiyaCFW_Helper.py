@@ -724,7 +724,7 @@ class Application(Frame):
     ################################################################################################
     def get_latest_twilight(self):
         # Try to use already downloaded TWiLight Menu++ archive
-        filename = 'TWiLightMenu.7z'
+        filename = 'TWiLightMenu-DSi.7z'
 
         try:
             if path.isfile(filename):
@@ -739,18 +739,14 @@ class Application(Frame):
 
             self.log.write('- Extracting ' + filename[:-3] + ' archive...')
 
-            proc = Popen([ _7za, 'x', '-bso0', '-y', filename, '_nds', 'DSi - CFW users',
-                'DSi&3DS - SD card users', 'roms' ])
+            proc = Popen([ _7za, 'x', '-bso0', '-y', filename, '-oTWiLight-temp'])
 
             ret_val = proc.wait()
 
             if ret_val == 0:
                 if self.clean_downloaded.get() == 1:
                     self.files.append(filename)
-                self.folders.append('DSi - CFW users')
-                self.folders.append('_nds')
-                self.folders.append('DSi&3DS - SD card users')
-                self.folders.append('roms')
+                self.folders.append('TWiLight-temp')
                 Thread(target=self.install_twilight, args=(filename[:-3],)).start()
 
             else:
@@ -772,10 +768,7 @@ class Application(Frame):
     def install_twilight(self, name):
         self.log.write('\nCopying ' + name + ' files...')
 
-        copy_tree(path.join('DSi - CFW users', 'SDNAND root'), self.sd_path, update=1)
-        copy_tree('_nds', path.join(self.sd_path, '_nds'))
-        copy_tree('DSi&3DS - SD card users', self.sd_path, update=1)
-        copy_tree('roms', path.join(self.sd_path, 'roms'))
+        copy_tree('TWiLight-temp', self.sd_path, update=1)
 
         Thread(target=self.clean).start()
 
