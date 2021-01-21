@@ -27,11 +27,11 @@ jobs:
   #       run: |
   #         pyinstaller --add-data "tools/Linux/*:Linux" HiyaCFW_Helper.py
   #         cd dist
-  #         zip -r ../HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-Linux.zip HiyaCFW_Helper
+  #         zip -r ../HiyaCFW-Helper-Linux.zip HiyaCFW_Helper
   #     - name: Publish artifact
   #       uses: actions/upload-artifact@v2
   #       with:
-  #         path: HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-Linux.zip
+  #         path: HiyaCFW-Helper-Linux.zip
   #         name: linux
 
   macos:
@@ -55,11 +55,11 @@ jobs:
         run: |
           pyinstaller --add-data "tools/Darwin/*:Darwin" HiyaCFW_Helper.py
           cd dist
-          zip -r ../HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-macOS.zip HiyaCFW_Helper
+          zip -r ../HiyaCFW-Helper-macOS.zip HiyaCFW_Helper
       - name: Publish artifact
         uses: actions/upload-artifact@v2
         with:
-          path: HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-macOS.zip
+          path: HiyaCFW-Helper-macOS.zip
           name: macos
 
   windows:
@@ -84,11 +84,11 @@ jobs:
         run: |
           pyinstaller --onefile HiyaCFW_Helper.py
           cd dist
-          tar.exe -acf ../HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-Win.zip HiyaCFW_Helper.exe
+          tar.exe -acf ../HiyaCFW-Helper-Win.zip HiyaCFW_Helper.exe
       - name: Publish artifact
         uses: actions/upload-artifact@v2
         with:
-          path: HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-Win.zip
+          path: HiyaCFW-Helper-Win.zip
           name: windows
 
   python:
@@ -102,13 +102,13 @@ jobs:
         run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - name: Make binary
         run: |
-          zip HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-Python3.zip HiyaCFW_Helper.py requirements.txt
+          zip HiyaCFW-Helper-Python3.zip HiyaCFW_Helper.py requirements.txt
           cd tools
-          zip -ur ../HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-Python3.zip *
+          zip -ur ../HiyaCFW-Helper-Python3.zip *
       - name: Publish artifact
         uses: actions/upload-artifact@v2
         with:
-          path: HiyaCFW-Helper-${{ steps.vars.outputs.tag }}-Python3.zip
+          path: HiyaCFW-Helper-Python3.zip
           name: python
 
   publish:
