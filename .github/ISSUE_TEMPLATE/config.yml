@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Support (thru DS⁽ⁱ⁾ Mode Hacking Discord server)
+    url: https://discord.gg/yD3spjv
+    about: "Please use #nds-modding-help on the Discord server for support"
+  - name: hiyaCFW issue
+    url: https://github.com/RocketRobz/hiyaCFW/issues/new/choose
+    about: Please use the hiyaCFW GitHub repository to report issues with hiyaCFW
+  - name: TWiLight Menu++ issue
+    url: https://github.com/DS-Homebrew/TWiLightMenu/issues/new/choose
+    about: Please use the TWiLight Menu++ GitHub repository to report issues with TWiLight Menu++

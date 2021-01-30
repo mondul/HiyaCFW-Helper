@@ -1,0 +1,133 @@
+name: Make distribution binaries
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  # Linux was having problems, so better of just using the Python zip
+  # linux:
+  #   runs-on: ubuntu-latest
+  #   name: Linux
+  #   steps:
+  #     - name: Checkout repo
+  #       uses: actions/checkout@v2
+  #     - name: Setup Python
+  #       uses: actions/setup-python@v2
+  #       with:
+  #         python-version: '3.x'
+  #         architecture: 'x64'
+  #     - name: Install pyinstaller
+  #       run: |
+  #         pip3 install certifi pyinstaller
+  #     - name: Get tag
+  #       id: vars
+  #       run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+  #     - name: Make binary
+  #       run: |
+  #         pyinstaller --add-data "tools/Linux/*:Linux" HiyaCFW_Helper.py
+  #         cd dist
+  #         zip -r ../HiyaCFW-Helper-Linux.zip HiyaCFW_Helper
+  #     - name: Publish artifact
+  #       uses: actions/upload-artifact@v2
+  #       with:
+  #         path: HiyaCFW-Helper-Linux.zip
+  #         name: linux
+
+  macos:
+    runs-on: macos-latest
+    name: macOS
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+          architecture: 'x64'
+      - name: Install pyinstaller
+        run: |
+          pip3 install certifi pyinstaller
+      - name: Get tag
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+      - name: Make binary
+        run: |
+          pyinstaller --add-data "tools/Darwin/*:Darwin" HiyaCFW_Helper.py
+          cd dist
+          zip -r ../HiyaCFW-Helper-macOS.zip HiyaCFW_Helper
+      - name: Publish artifact
+        uses: actions/upload-artifact@v2
+        with:
+          path: HiyaCFW-Helper-macOS.zip
+          name: macos
+
+  windows:
+    runs-on: windows-latest
+    name: Windows
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+          architecture: 'x86'
+      - name: Install pyinstaller
+        run: |
+          pip3 install certifi pyinstaller
+      - name: Get tag
+        id: vars
+        shell: bash
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+      - name: Make binary
+        run: |
+          pyinstaller --onefile HiyaCFW_Helper.py
+          cd dist
+          tar.exe -acf ../HiyaCFW-Helper-Win.zip HiyaCFW_Helper.exe
+      - name: Publish artifact
+        uses: actions/upload-artifact@v2
+        with:
+          path: HiyaCFW-Helper-Win.zip
+          name: windows
+
+  python:
+    runs-on: ubuntu-latest
+    name: Python 3
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Get tag
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+      - name: Make binary
+        run: |
+          zip HiyaCFW-Helper-Python3.zip HiyaCFW_Helper.py requirements.txt
+          cd tools
+          zip -ur ../HiyaCFW-Helper-Python3.zip *
+      - name: Publish artifact
+        uses: actions/upload-artifact@v2
+        with:
+          path: HiyaCFW-Helper-Python3.zip
+          name: python
+
+  publish:
+    runs-on: ubuntu-latest
+    name: Publish builds
+    if: ${{ success() }}
+    needs: [macos, windows, python] # Add linux if re-adding
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+      - name: Upload to release
+        run: |
+          ID=$(jq --raw-output '.release.id' $GITHUB_EVENT_PATH)
+
+          for file in ${{ github.workspace }}/*/*; do
+            AUTH_HEADER="Authorization: token ${{ secrets.GITHUB_TOKEN }}"
+            CONTENT_LENGTH="Content-Length: $(stat -c%s $file)"
+            CONTENT_TYPE="Content-Type: application/7z-x-compressed"
+            UPLOAD_URL="https://uploads.github.com/repos/${{ github.repository }}/releases/$ID/assets?name=$(basename $file)"
+
+            curl -XPOST -H "$AUTH_HEADER" -H "$CONTENT_LENGTH" -H "$CONTENT_TYPE" --upload-file "$file" "$UPLOAD_URL"
+          done

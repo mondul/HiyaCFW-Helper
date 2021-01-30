@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# HiyaCFW Helper
-# Version 3.4.1
+# hiyaCFW Helper
+# Version 3.6.1
 # Author: mondul <mondul@huyzona.com>
 
 from tkinter import (Tk, Frame, LabelFrame, PhotoImage, Button, Entry, Checkbutton, Radiobutton,
@@ -12,7 +12,7 @@ from tkinter.messagebox import askokcancel, showerror, showinfo, WARNING
 from tkinter.filedialog import askopenfilename, askdirectory
 from platform import system
 from os import path, remove, chmod, listdir
-from sys import exit
+from sys import exit, argv
 from threading import Thread
 from queue import Queue, Empty
 from hashlib import sha1
@@ -22,7 +22,7 @@ from subprocess import Popen
 from struct import unpack_from
 from shutil import rmtree, copyfile, copyfileobj
 from distutils.dir_util import copy_tree, _path_created
-
+import certifi, sys
 
 ####################################################################################################
 # Thread-safe text class
@@ -77,6 +77,8 @@ class Application(Frame):
         self.nand_file = StringVar()
         Entry(f1, textvariable=self.nand_file, state='readonly', width=40).pack(side='left')
 
+        if sysname == 'Darwin' and getattr(sys, 'frozen', False):
+            Label(f1, text='...').pack(side='top')
         Button(f1, text='...', command=self.choose_nand).pack(side='left')
 
         f1.pack(padx=10, pady=10, fill=X)
@@ -84,14 +86,28 @@ class Application(Frame):
         # Second row
         f2 = Frame(self)
 
-        # Check box
+        # Check boxes
+        self.checks_frame = Frame(f2)
+
+        # Install TWiLight check
         self.twilight = IntVar()
         self.twilight.set(1)
 
-        self.chk = Checkbutton(f2, text='Install latest TWiLight Menu++ on custom firmware',
-            variable=self.twilight)
+        twl_chk = Checkbutton(self.checks_frame,
+            text='Install latest TWiLight Menu++ on custom firmware', variable=self.twilight)
 
-        self.chk.pack(padx=10, anchor=W)
+        twl_chk.pack(padx=10, anchor=W)
+
+        # Clean files check
+        self.clean_downloaded = IntVar()
+        self.clean_downloaded.set(1)
+
+        clean_chk = Checkbutton(self.checks_frame, text='Clean downloaded files after completion',
+            variable=self.clean_downloaded)
+
+        clean_chk.pack(padx=10, anchor=W)
+
+        self.checks_frame.pack(fill=X)
 
         # NAND operation frame
         self.nand_frame = LabelFrame(f2, text='NAND operation', padx=10, pady=10)
@@ -132,9 +148,13 @@ class Application(Frame):
         # Third row
         f3 = Frame(self)
 
+        if sysname == 'Darwin' and getattr(sys, 'frozen', False):
+            Label(f3, text='Start').pack(side='left')
         self.start_button = Button(f3, text='Start', width=16, command=self.hiya, state=DISABLED)
         self.start_button.pack(side='left', padx=(0, 5))
 
+        if sysname == 'Darwin' and getattr(sys, 'frozen', False):
+            Label(f3, text='Quit').pack(side='left')
         Button(f3, text='Quit', command=root.destroy, width=16).pack(side='left', padx=(5, 0))
 
         f3.pack(pady=(10, 20))
@@ -147,13 +167,13 @@ class Application(Frame):
     def change_mode(self):
         if (self.nand_mode):
             self.nand_frame.pack_forget()
-            self.chk.pack(padx=10, anchor=W)
+            self.checks_frame.pack(padx=10, anchor=W)
             self.nand_mode = False
 
         else:
             if askokcancel('Warning', ('You are about to enter NAND mode. Do it only if you know '
                 'what you are doing. Proceed?'), icon=WARNING):
-                self.chk.pack_forget()
+                self.checks_frame.pack_forget()
                 self.nand_frame.pack(padx=10, pady=(0, 10), fill=X)
                 self.nand_mode = True
 
@@ -236,7 +256,11 @@ class Application(Frame):
 
         frame.pack()
 
-        Button(dialog, text='Close', command=dialog.destroy, width=16).pack(pady=10)
+        if sysname == 'Darwin' and getattr(sys, 'frozen', False):
+            Label(dialog, text='Close').pack(side='top', pady=(10, 0))
+            Button(dialog, text='Close', command=dialog.destroy, width=16).pack(pady=(0, 10))
+        else:
+            Button(dialog, text='Close', command=dialog.destroy, width=16).pack(pady=10)
 
         # Center in window
         dialog.update_idletasks()
@@ -294,28 +318,29 @@ class Application(Frame):
 
     ################################################################################################
     def get_latest_hiyacfw(self):
-        # Try to use already downloaded HiyaCFW archive
-        filename = 'HiyaCFW.7z'
+        # Try to use already downloaded hiyaCFW archive
+        filename = 'hiyaCFW.7z'
 
         try:
             if path.isfile(filename):
-                self.log.write('\nPreparing HiyaCFW...')
+                self.log.write('\nPreparing hiyaCFW...')
 
             else:
-                self.log.write('\nDownloading latest HiyaCFW release...')
+                self.log.write('\nDownloading latest hiyaCFW release...')
 
                 with urlopen('https://github.com/RocketRobz/hiyaCFW/releases/latest/download/' +
                     filename) as src, open(filename, 'wb') as dst:
                     copyfileobj(src, dst)
 
-            self.log.write('- Extracting HiyaCFW archive...')
+            self.log.write('- Extracting hiyaCFW archive...')
 
-            proc = Popen([ _7z, 'x', '-bso0', '-y', filename, 'for PC', 'for SDNAND SD card' ])
+            proc = Popen([ _7za, 'x', '-bso0', '-y', filename, 'for PC', 'for SDNAND SD card' ])
 
             ret_val = proc.wait()
 
             if ret_val == 0:
-                self.files.append(filename)
+                if self.clean_downloaded.get() == 1:
+                    self.files.append(filename)
                 self.folders.append('for PC')
                 self.folders.append('for SDNAND SD card')
                 # Got to decrypt NAND if bootloader.nds is present
@@ -327,7 +352,7 @@ class Application(Frame):
 
         except (URLError, IOError) as e:
             print(e)
-            self.log.write('ERROR: Could not get HiyaCFW')
+            self.log.write('ERROR: Could not get hiyaCFW')
 
         except OSError as e:
             print(e)
@@ -456,7 +481,7 @@ class Application(Frame):
         self.log.write('\nGenerating new bootloader...')
 
         exe = (path.join('for PC', 'bootloader files', 'ndstool.exe') if sysname == 'Windows' else
-            path.join(sysname, 'ndsblc'))
+            path.join(scriptPath, sysname, 'ndsblc'))
 
         try:
             proc = Popen([ exe, '-c', 'bootloader.nds', '-9', 'arm9.bin', '-7', 'arm7.bin', '-t',
@@ -503,7 +528,7 @@ class Application(Frame):
             if ret_val == 0:
                 self.files.append(self.console_id.get() + '.img')
 
-                Thread(target=self.win_extract_nand if sysname == 'Windows'
+                Thread(target=self.win_extract_nand if (sysname == 'Windows' and _7z is not None)
                     else self.extract_nand).start()
 
             else:
@@ -537,16 +562,34 @@ class Application(Frame):
 
                 else:
                     self.log.write('ERROR: Extractor failed, please update 7-Zip')
-                    Thread(target=self.clean, args=(True,)).start()
+
+                    if path.exists(fatcat):
+                        self.log.write('\nTrying with fatcat...')
+                        Thread(target=self.extract_nand).start()
+
+                    else:
+                        Thread(target=self.clean, args=(True,)).start()
 
             else:
                 self.log.write('ERROR: Extractor failed')
-                Thread(target=self.clean, args=(True,)).start()
+
+                if path.exists(fatcat):
+                    self.log.write('\nTrying with fatcat...')
+                    Thread(target=self.extract_nand).start()
+
+                else:
+                    Thread(target=self.clean, args=(True,)).start()
 
         except OSError as e:
             print(e)
             self.log.write('ERROR: Could not execute ' + exe)
-            Thread(target=self.clean, args=(True,)).start()
+
+            if path.exists(fatcat):
+                self.log.write('\nTrying with fatcat...')
+                Thread(target=self.extract_nand).start()
+
+            else:
+                Thread(target=self.clean, args=(True,)).start()
 
 
     ################################################################################################
@@ -582,16 +625,16 @@ class Application(Frame):
             Thread(target=self.clean, args=(True,)).start()
             return
 
-        # Delete contents of the launcher folder as it will be replaced by the one from HiyaCFW
+        # Delete contents of the launcher folder as it will be replaced by the one from hiyaCFW
         launcher_folder = path.join(self.sd_path, 'title', '00030017', app, 'content')
 
         # Walk through all files in the launcher content folder
         for file in listdir(launcher_folder):
             file = path.join(launcher_folder, file)
 
-            # Set current file as read/write in case we are in Windows and unlaunch was installed
-            # in the NAND. For Linux and MacOS fatcat doesn't keep file attributes
-            if sysname == 'Windows':
+            # Set current file as read/write in case we extracted with 7-Zip and unlaunch was
+            # installed in the NAND. Fatcat doesn't keep file attributes
+            if _7z is not None:
                 chmod(file, 438)
 
             # Delete current file
@@ -612,25 +655,39 @@ class Application(Frame):
 
             self.log.write('- Decrypting launcher...')
 
-            proc = Popen([ _7z, 'x', '-bso0', '-y', '-p' + app, self.launcher_region,
-                '00000002.app' ])
+            # Set launcher filename according to the region
+            launcher_app = ('00000000.app' if self.launcher_region in ('CHN', 'KOR')
+                else '00000002.app')
+
+            # Prepare decryption params
+            params = [ _7za, 'x', '-bso0', '-y', '-p' + app.lower(), self.launcher_region,
+                launcher_app ]
+
+            if launcher_app == '00000000.app':
+                params.append('title.tmd')
+
+            proc = Popen(params)
 
             ret_val = proc.wait()
 
             if ret_val == 0:
-                self.files.append(self.launcher_region)
-                self.files.append('00000002.app')
+                if self.clean_downloaded.get() == 1:
+                    self.files.append(self.launcher_region)
+                self.files.append(launcher_app)
 
-                # Hash 00000002.app
+                if launcher_app == '00000000.app':
+                    self.files.append('title.tmd')
+
+                # Hash launcher app
                 sha1_hash = sha1()
 
-                with open('00000002.app', 'rb') as f:
+                with open(launcher_app, 'rb') as f:
                     sha1_hash.update(f.read())
 
                 self.log.write('- Patched launcher SHA1:\n  ' +
                     sha1_hash.digest().hex().upper())
 
-                Thread(target=self.install_hiyacfw, args=(launcher_folder,)).start()
+                Thread(target=self.install_hiyacfw, args=(launcher_app, launcher_folder)).start()
 
             else:
                 self.log.write('ERROR: Extractor failed')
@@ -648,7 +705,7 @@ class Application(Frame):
 
 
     ################################################################################################
-    def install_hiyacfw(self, launcher_folder):
+    def install_hiyacfw(self, launcher_app, launcher_folder):
         self.log.write('\nCopying HiyaCFW files...')
 
         # Reset copied files cache
@@ -656,35 +713,40 @@ class Application(Frame):
 
         copy_tree('for SDNAND SD card', self.sd_path, update=1)
         copyfile('bootloader.nds', path.join(self.sd_path, 'hiya', 'bootloader.nds'))
-        copyfile('00000002.app', path.join(launcher_folder, '00000002.app'))
+        copyfile(launcher_app, path.join(launcher_folder, launcher_app))
+
+        if launcher_app == '00000000.app':
+            copyfile('title.tmd', path.join(launcher_folder, 'title.tmd'))
 
         Thread(target=self.get_latest_twilight if self.twilight.get() == 1 else self.clean).start()
 
 
     ################################################################################################
     def get_latest_twilight(self):
-        filename = 'TWiLightMenu.7z'
+        # Try to use already downloaded TWiLight Menu++ archive
+        filename = 'TWiLightMenu-DSi.7z'
 
         try:
-            self.log.write('\nDownloading latest TWiLight Menu++ release...')
+            if path.isfile(filename):
+                self.log.write('\nPreparing TWiLight Menu++...')
 
-            with urlopen('https://github.com/DS-Homebrew/TWiLightMenu/releases/latest/download/' +
-                filename) as src, open(filename, 'wb') as dst:
-                copyfileobj(src, dst)
+            else:
+                self.log.write('\nDownloading latest TWiLight Menu++ release...')
+
+                with urlopen('https://github.com/DS-Homebrew/TWiLightMenu/releases/latest/download/' +
+                    filename) as src, open(filename, 'wb') as dst:
+                    copyfileobj(src, dst)
 
             self.log.write('- Extracting ' + filename[:-3] + ' archive...')
 
-            proc = Popen([ _7z, 'x', '-bso0', '-y', filename, '_nds', 'DSi - CFW users',
-                'DSi&3DS - SD card users', 'roms' ])
+            proc = Popen([ _7za, 'x', '-bso0', '-y', filename, '-oTWiLight-temp'])
 
             ret_val = proc.wait()
 
             if ret_val == 0:
-                self.files.append(filename)
-                self.folders.append('DSi - CFW users')
-                self.folders.append('_nds')
-                self.folders.append('DSi&3DS - SD card users')
-                self.folders.append('roms')
+                if self.clean_downloaded.get() == 1:
+                    self.files.append(filename)
+                self.folders.append('TWiLight-temp')
                 Thread(target=self.install_twilight, args=(filename[:-3],)).start()
 
             else:
@@ -706,10 +768,7 @@ class Application(Frame):
     def install_twilight(self, name):
         self.log.write('\nCopying ' + name + ' files...')
 
-        copy_tree(path.join('DSi - CFW users', 'SDNAND root'), self.sd_path, update=1)
-        copy_tree('_nds', path.join(self.sd_path, '_nds'))
-        copy_tree('DSi&3DS - SD card users', self.sd_path, update=1)
-        copy_tree('roms', path.join(self.sd_path, 'roms'))
+        copy_tree('TWiLight-temp', self.sd_path, update=1)
 
         Thread(target=self.clean).start()
 
@@ -790,9 +849,10 @@ class Application(Frame):
     ################################################################################################
     def detect_region(self):
         REGION_CODES = {
+            '484e4143': 'CHN',
             '484e4145': 'USA',
             '484e414a': 'JAP',
-            '484e414b': 'KOR',
+            #'484e414b': 'KOR',
             '484e4150': 'EUR',
             '484e4155': 'AUS'
         }
@@ -803,8 +863,9 @@ class Application(Frame):
                 for file in listdir(path.join(self.sd_path, 'title', '00030017', app, 'content')):
                     if file.endswith('.app'):
                         try:
-                            self.log.write('- Detected ' + REGION_CODES[app] + ' console NAND dump')
-                            self.launcher_region = REGION_CODES[app]
+                            self.log.write('- Detected ' + REGION_CODES[app.lower()] +
+                                ' console NAND dump')
+                            self.launcher_region = REGION_CODES[app.lower()]
                             return app
 
                         except KeyError:
@@ -898,6 +959,11 @@ print('Initializing GUI...')
 
 root = Tk()
 
+scriptPath = path.dirname(path.abspath(argv[0]))
+fatcat = path.join(scriptPath, sysname, 'fatcat')
+_7za = path.join(scriptPath, sysname, '7za')
+_7z = None
+
 if sysname == 'Windows':
     from winreg import OpenKey, QueryValueEx, HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_64KEY
 
@@ -910,6 +976,8 @@ if sysname == 'Windows':
             if not path.exists(_7z):
                 raise WindowsError
 
+            _7za = _7z
+
     except WindowsError:
         print('Searching for 7-Zip in the 32-bit Windows registry...')
 
@@ -920,29 +988,28 @@ if sysname == 'Windows':
                 if not path.exists(_7z):
                     raise WindowsError
 
-        except WindowsError:
-            root.withdraw()
-            showerror('Error', 'This script needs 7-Zip to run. Please install it.')
-            root.destroy()
-            exit(1)
+                _7za = _7z
 
+        except WindowsError:
+            print('7-Zip not found. Will use fatcat for extraction.')
+            _7z = None
+            _7za += '.exe'
+
+    fatcat += '.exe'
     twltool = path.join('for PC', 'twltool.exe')
 
 else:   # Linux and MacOS
-    twltool = path.join(sysname, 'twltool')
+    twltool = path.join(scriptPath, sysname, 'twltool')
 
-    if not path.exists(twltool):
-        root.withdraw()
-        showerror('Error', 'TWLTool not found. Please make sure the ' + sysname +
-            ' folder is at the same location as this script, or run it again from the terminal:' +
-            "\n\n$ ./HiyaCFW_Helper.py")
-        root.destroy()
-        exit(1)
+if _7z is None and not path.exists(fatcat):
+    root.withdraw()
+    showerror('Error', 'Fatcat not found. Please make sure the ' + sysname +
+        ' folder is at the same location as this script' + ('.' if sysname == 'Windows'
+        else ", or run it again from the terminal:\n\n$ ./HiyaCFW_Helper.py"))
+    root.destroy()
+    exit(1)
 
-    fatcat = path.join(sysname, 'fatcat')
-    _7z = path.join(sysname, '7za')
-
-root.title('HiyaCFW Helper v3.4.1')
+root.title('hiyaCFW Helper v3.6.1')
 # Disable maximizing
 root.resizable(0, 0)
 # Center in window

@@ -11,7 +11,7 @@ In order to make things easier for me, and because I don't have Windows, I edite
 * Autodetects the console region from the NAND dump, downloads and decrypts its v512 launcher.
 * Creates the patched _00000002.app_ and _bootloader.nds_ for the custom firmware.
 * Uses your platform's twltool (binaries for Linux and MacOS included) to decrypt the NAND.
-* Extracts the decrypted NAND to the chosen output destination (7-Zip required for Windows).
+* Extracts the decrypted NAND to the chosen output destination.
 * Installs the HiyaCFW and the patched files on the chosen output destination.
 * (Optional) installs the latest release of TWiLightMenu++ on the chosen output destination.
 
@@ -20,7 +20,7 @@ Clicking on the integrated circuit button will give you a NAND mode, where you c
 
 ## Requirements:
 ### _Windows:_
-* 7-Zip 19.00 or greater.
+* None, everything needed is included in the release archive.
 
 ### _Linux:_
 * Python 3.5 or greater with the Tk library (I had to do `sudo apt-get install python3-tk -y` in my Ubuntu virtual machine, `sudo dnf install python3-tkinter` in Fedora, `sudo pacman -S tk` in Arch Linux). You might need to install the Python 3 distutils package also.
@@ -28,13 +28,15 @@ Clicking on the integrated circuit button will give you a NAND mode, where you c
 ### _MacOS:_
 * Python 3.5 or greater, you can install it with one of these options:
   * _[Recommended]_ Homebrew (install homebrew by running `/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"` in a terminal window, then `brew install python`).
-  * _[Might have issues]_ The latest installer from the [python.org releases page](https://www.python.org/downloads/release) ([3.7.3](https://www.python.org/ftp/python/3.7.3/python-3.7.3-macosx10.9.pkg) at the time of this writing). **NOTE:** Using this option you might need to go to `Applications` > `Python 3.<version>` and run `Install Certificates.command`. This will avoid the `"Could not get HiyaCFW"` error.
+  * _[Might have issues]_ The latest installer from the [python.org releases page](https://www.python.org/downloads/release) ([3.8.3](https://www.python.org/ftp/python/3.8.3/python-3.8.3-macosx10.9.pkg) at the time of this writing).
+ 
+ **NOTE:** If you get the `"Could not get HiyaCFW"` error, run ``pip3 install certifi`` to install the needed certificates for python.
 
 ## What it includes:
-* 7za binaries for Linux and MacOS. It's used to decompress the HiyaCFW latest release as [@RocketRobz](https://github.com/RocketRobz) uploaded it as a 7z archive. Compiled from the [kornelski's GitHub repo](https://github.com/kornelski/7z).
+* 7za binaries for Windows, Linux and MacOS. It's used to decompress the HiyaCFW latest release as [@RocketRobz](https://github.com/RocketRobz) uploaded it as a 7z archive. Compiled from the [kornelski's GitHub repo](https://github.com/kornelski/7z).
 * twltool binaries for Linux and MacOS. Compiled from the [WinterMute's GitHub repo](https://github.com/WinterMute/twltool). For Windows the twltool included with HiyaCFW is used.
 * NDS bootloader creator binaries for Linux and MacOS (based off devkitPro's ndstool v1.27). Compiled from [my GitHub repo](https://github.com/mondul/NDS-Bootloader-Creator). For Windows the ndstool included with HiyaCFW is used.
-* fatcat binaries for Linux and MacOS. Compiled from the [Gregwar's GitHub repo](https://github.com/Gregwar/fatcat).
+* fatcat binaries for Windows, Linux and MacOS. Compiled from the [Gregwar's GitHub repo](https://github.com/Gregwar/fatcat).
 
 ## How to use it:
 ### _Windows:_
