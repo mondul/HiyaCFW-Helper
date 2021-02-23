@@ -663,9 +663,6 @@ class Application(Frame):
             params = [ _7za, 'x', '-bso0', '-y', '-p' + app.lower(), self.launcher_region,
                 launcher_app ]
 
-            if launcher_app == '00000000.app':
-                params.append('title.tmd')
-
             proc = Popen(params)
 
             ret_val = proc.wait()
@@ -674,9 +671,6 @@ class Application(Frame):
                 if self.clean_downloaded.get() == 1:
                     self.files.append(self.launcher_region)
                 self.files.append(launcher_app)
-
-                if launcher_app == '00000000.app':
-                    self.files.append('title.tmd')
 
                 # Hash launcher app
                 sha1_hash = sha1()
@@ -714,9 +708,6 @@ class Application(Frame):
         copy_tree('for SDNAND SD card', self.sd_path, update=1)
         copyfile('bootloader.nds', path.join(self.sd_path, 'hiya', 'bootloader.nds'))
         copyfile(launcher_app, path.join(launcher_folder, launcher_app))
-
-        if launcher_app == '00000000.app':
-            copyfile('title.tmd', path.join(launcher_folder, 'title.tmd'))
 
         Thread(target=self.get_latest_twilight if self.twilight.get() == 1 else self.clean).start()
 
@@ -852,7 +843,7 @@ class Application(Frame):
             '484e4143': 'CHN',
             '484e4145': 'USA',
             '484e414a': 'JAP',
-            #'484e414b': 'KOR',
+            '484e414b': 'KOR',
             '484e4150': 'EUR',
             '484e4155': 'AUS'
         }
