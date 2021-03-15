@@ -852,7 +852,7 @@ class Application(Frame):
         try:
             for app in listdir(path.join(self.sd_path, 'title', '00030017')):
                 for file in listdir(path.join(self.sd_path, 'title', '00030017', app, 'content')):
-                    if file.endswith('.app'):
+                    if file.lower().endswith('.app'):
                         try:
                             self.log.write('- Detected ' + REGION_CODES[app.lower()] +
                                 ' console NAND dump')
