@@ -1,2 +1,2 @@
 certifi
-tk
+tkinter
