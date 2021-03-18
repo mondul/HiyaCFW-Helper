@@ -107,6 +107,14 @@ class Application(Frame):
 
         clean_chk.pack(padx=10, anchor=W)
 
+        # Extract photo check
+        self.photo = IntVar()
+        self.photo.set(1)
+
+        photo_chk = Checkbutton(self.checks_frame, text='Extract photo partition from NAND', variable=self.photo)
+
+        photo_chk.pack(padx=10, anchor=W)
+
         self.checks_frame.pack(fill=X)
 
         # NAND operation frame
@@ -546,19 +554,33 @@ class Application(Frame):
         self.log.write('\nExtracting files from NAND...')
 
         try:
-            proc = Popen([ _7z, 'x', '-bso0', '-y', self.console_id.get() + '.img', '0.fat' ])
+            if self.photo.get() == 1:
+                proc = Popen([ _7z, 'x', '-bso0', '-y', self.console_id.get() + '.img', '0.fat', '1.fat' ])
+            else:
+                proc = Popen([ _7z, 'x', '-bso0', '-y', self.console_id.get() + '.img', '0.fat' ])
 
             ret_val = proc.wait()
 
             if ret_val == 0:
                 self.files.append('0.fat')
+                if self.photo.get() == 1:
+                    self.files.append('1.fat')
 
                 proc = Popen([ _7z, 'x', '-bso0', '-y', '-o' + self.sd_path, '0.fat' ])
 
                 ret_val = proc.wait()
 
                 if ret_val == 0:
-                    Thread(target=self.get_launcher).start()
+                    if self.photo.get() == 1:
+                        proc = Popen([ _7z, 'x', '-bso0', '-y', '-o' + self.sd_path, '1.fat' ])
+                        ret_val = proc.wait()
+                        if ret_val == 0:
+                            Thread(target=self.get_launcher).start()
+                        else:
+                            self.log.write('ERROR: Failed to extract photo partition')
+                            Thread(target=self.clean, args=(True,)).start()
+                    else:
+                        Thread(target=self.get_launcher).start()
 
                 else:
                     self.log.write('ERROR: Extractor failed, please update 7-Zip')
@@ -604,7 +626,18 @@ class Application(Frame):
             ret_val = proc.wait()
 
             if ret_val == 0:
-                Thread(target=self.get_launcher).start()
+                if self.photo.get() == 1:
+                    # DSi photo partition offset: 0CF09A00h
+                    proc = Popen([ fatcat, '-O', '217094656', '-x', self.sd_path,
+                        self.console_id.get() + '.img' ])
+                    ret_val = proc.wait()
+                    if ret_val == 0:
+                        Thread(target=self.get_launcher).start()
+                    else:
+                        self.log.write('ERROR: Failed to extract photo partition')
+                        Thread(target=self.clean, args=(True,)).start()
+                else:
+                    Thread(target=self.get_launcher).start()
 
             else:
                 self.log.write('ERROR: Extractor failed')
@@ -852,7 +885,7 @@ class Application(Frame):
         try:
             for app in listdir(path.join(self.sd_path, 'title', '00030017')):
                 for file in listdir(path.join(self.sd_path, 'title', '00030017', app, 'content')):
-                    if file.endswith('.app'):
+                    if file.lower().endswith('.app'):
                         try:
                             self.log.write('- Detected ' + REGION_CODES[app.lower()] +
                                 ' console NAND dump')
