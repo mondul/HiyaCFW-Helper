@@ -75,7 +75,7 @@ jobs:
           architecture: 'x86'
       - name: Install pyinstaller
         run: |
-          pip3 install certifi pyinstaller==3.6
+          pip3 install pyinstaller==3.6
       - name: Get tag
         id: vars
         shell: bash
@@ -83,8 +83,12 @@ jobs:
       - name: Make binary
         run: |
           pyinstaller --onefile HiyaCFW_Helper.py
+          mkdir dist\Windows
+          cp tools\Windows\fatcat.exe dist\Windows
+          cp tools\Windows\7za.exe dist\Windows
+          cp tools\Windows\7za.exe dist
           cd dist
-          tar.exe -acf ../HiyaCFW-Helper-Win.zip HiyaCFW_Helper.exe
+          7za a ../HiyaCFW-Helper-Win.zip HiyaCFW_Helper.exe Windows
       - name: Publish artifact
         uses: actions/upload-artifact@v2
         with:

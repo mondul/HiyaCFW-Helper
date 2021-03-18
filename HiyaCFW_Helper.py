@@ -22,7 +22,12 @@ from subprocess import Popen
 from struct import unpack_from
 from shutil import rmtree, copyfile, copyfileobj
 from distutils.dir_util import copy_tree, _path_created
-import certifi, sys
+import sys
+try:
+    import certifi
+except:
+    import ssl
+    ssl._create_default_https_context = ssl._create_unverified_context
 
 ####################################################################################################
 # Thread-safe text class
