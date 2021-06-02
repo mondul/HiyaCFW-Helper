@@ -51,6 +51,10 @@ Clicking on the integrated circuit button will give you a NAND mode, where you c
 ### _MacOS:_
 * Open a Terminal (⌘+Space and write _terminal_).
 * _cd_ to the helper's folder (`cd ~/Downloads/HiyaCFW-Helper` or whatever).
+* Unfortunately, macOS is awful. In order for HiyaCFW to actually use these binaries, it needs "permission" from macOS to open them. We can give it permission by disabling GateKeeper, and then _opening_ all the binaries manually. First, if you haven't already (you may check by running `spctl --status`), disable GateKeeper by running `sudo spctl --master-disable`. Note that this will allow you to run any program you download to your Mac, signed or unsigned.
+* _cd_ to the folder containing the additional binaries (`cd Darwin`).
+* Then, we can run everything in the current directory by typing `open 7za && open fatcat && open ndsblc && open twltool` (don't try `open *`, it won't work). Four dialogues will pop up, asking us if we _really_ want to open these binaries. Click "Open" for all four of them, and close the additional Terminal window that pops up.
+* _cd_ one directory back (`cd ..`).
 * Run `./HiyaCFW_Helper.py`.
 
 Thanks to:
