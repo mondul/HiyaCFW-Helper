@@ -96,7 +96,6 @@ class Application(Frame):
 
         # Install TWiLight check
         self.twilight = IntVar()
-        self.twilight.set(1)
 
         twl_chk = Checkbutton(self.checks_frame,
             text='Install latest TWiLight Menu++ on custom firmware', variable=self.twilight)
