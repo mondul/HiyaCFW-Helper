@@ -25,33 +25,17 @@ Clicking on the integrated circuit button will give you a NAND mode, where you c
 ### _Linux:_
 * Python 3.5 or greater with the Tk library (I had to do `sudo apt-get install python3-tk -y` in my Ubuntu virtual machine, `sudo dnf install python3-tkinter` in Fedora, `sudo pacman -S tk` in Arch Linux). You might need to install the Python 3 distutils package also.
 
-### _MacOS:_
-* Python 3.5 or greater, you can install it with one of these options:
-  * _[Recommended]_ Homebrew (install homebrew by running `/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"` in a terminal window, then `brew install python`).
-  * _[Might have issues]_ The latest installer from the [python.org releases page](https://www.python.org/downloads/release) ([3.8.3](https://www.python.org/ftp/python/3.8.3/python-3.8.3-macosx10.9.pkg) at the time of this writing).
- 
- **NOTE:** If you get the `"Could not get HiyaCFW"` error, run ``pip3 install certifi`` to install the needed certificates for python.
+### _macOS:_
+* None, everything needed in included in the release archive.
 
 ## What it includes:
-* 7za binaries for Windows, Linux and MacOS. It's used to decompress the HiyaCFW latest release as [@RocketRobz](https://github.com/RocketRobz) uploaded it as a 7z archive. Compiled from the [kornelski's GitHub repo](https://github.com/kornelski/7z).
-* twltool binaries for Linux and MacOS. Compiled from the [WinterMute's GitHub repo](https://github.com/WinterMute/twltool). For Windows the twltool included with HiyaCFW is used.
-* NDS bootloader creator binaries for Linux and MacOS (based off devkitPro's ndstool v1.27). Compiled from [my GitHub repo](https://github.com/mondul/NDS-Bootloader-Creator). For Windows the ndstool included with HiyaCFW is used.
-* fatcat binaries for Windows, Linux and MacOS. Compiled from the [Gregwar's GitHub repo](https://github.com/Gregwar/fatcat).
+* 7za binaries for Windows, Linux and macOS. It's used to decompress the HiyaCFW latest release as [@RocketRobz](https://github.com/RocketRobz) uploaded it as a 7z archive. Compiled from the [kornelski's GitHub repo](https://github.com/kornelski/7z).
+* twltool binaries for Linux and macOS. Compiled from the [WinterMute's GitHub repo](https://github.com/WinterMute/twltool). For Windows the twltool included with HiyaCFW is used.
+* NDS bootloader creator binaries for Linux and macOS (based off devkitPro's ndstool v1.27). Compiled from [my GitHub repo](https://github.com/mondul/NDS-Bootloader-Creator). For Windows the ndstool included with HiyaCFW is used.
+* fatcat binaries for Windows, Linux and mxacOS. Compiled from the [Gregwar's GitHub repo](https://github.com/Gregwar/fatcat).
 
 ## How to use it:
-### _Windows:_
-* Go to the helper's folder.
-* Double-click on the _HiyaCFW_Helper.exe_ file.
-
-### _Linux:_
-* Open a terminal.
-* _cd_ to the helper's folder (`cd ~/Downloads/HiyaCFW-Helper` or whatever).
-* Run `./HiyaCFW_Helper.py`.
-
-### _MacOS:_
-* Open a Terminal (⌘+Space and write _terminal_).
-* _cd_ to the helper's folder (`cd ~/Downloads/HiyaCFW-Helper` or whatever).
-* Run `./HiyaCFW_Helper.py`.
+See the DS-Homebrew Wiki's [Installing hiyaCFW](https://wiki.ds-homebrew.com/hiyacfw/installing) page for instructions on how to use this.
 
 Thanks to:
 * jerbear64 and LmN for the original script.
