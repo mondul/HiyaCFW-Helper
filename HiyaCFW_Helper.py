@@ -82,8 +82,6 @@ class Application(Frame):
         self.nand_file = StringVar()
         Entry(f1, textvariable=self.nand_file, state='readonly', width=40).pack(side='left')
 
-        if sysname == 'Darwin' and getattr(sys, 'frozen', False):
-            Label(f1, text='...').pack(side='top')
         Button(f1, text='...', command=self.choose_nand).pack(side='left')
 
         f1.pack(padx=10, pady=10, fill=X)
@@ -160,13 +158,9 @@ class Application(Frame):
         # Third row
         f3 = Frame(self)
 
-        if sysname == 'Darwin' and getattr(sys, 'frozen', False):
-            Label(f3, text='Start').pack(side='left')
         self.start_button = Button(f3, text='Start', width=16, command=self.hiya, state=DISABLED)
         self.start_button.pack(side='left', padx=(0, 5))
 
-        if sysname == 'Darwin' and getattr(sys, 'frozen', False):
-            Label(f3, text='Quit').pack(side='left')
         Button(f3, text='Quit', command=root.destroy, width=16).pack(side='left', padx=(5, 0))
 
         f3.pack(pady=(10, 20))
