@@ -334,7 +334,7 @@ class Application(Frame):
             else:
                 self.log.write('\nDownloading latest hiyaCFW release...')
 
-                with urlopen('https://github.com/RocketRobz/hiyaCFW/releases/latest/download/' +
+                with urlopen('https://github.com/DS-Homebrew/hiyaCFW/releases/latest/download/' +
                     filename) as src, open(filename, 'wb') as dst:
                     copyfileobj(src, dst)
 
