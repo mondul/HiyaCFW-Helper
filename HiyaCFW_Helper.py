@@ -262,11 +262,7 @@ class Application(Frame):
 
         frame.pack()
 
-        if sysname == 'Darwin' and getattr(sys, 'frozen', False):
-            Label(dialog, text='Close').pack(side='top', pady=(10, 0))
-            Button(dialog, text='Close', command=dialog.destroy, width=16).pack(pady=(0, 10))
-        else:
-            Button(dialog, text='Close', command=dialog.destroy, width=16).pack(pady=10)
+        Button(dialog, text='Close', command=dialog.destroy, width=16).pack(pady=10)
 
         # Center in window
         dialog.update_idletasks()
